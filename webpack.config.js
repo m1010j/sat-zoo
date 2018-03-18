@@ -3,7 +3,7 @@ var path = require('path');
 module.exports = {
   entry: './entry.js',
   output: {
-    filename: './sat-zoo.js',
+    filename: './script.js',
   },
   module: {
     loaders: [

@@ -67,10 +67,29 @@ export const benchmark = wff => {
   }
 };
 
-const wff = generateWff(15);
-console.log(`Testing this formula: '${wff}'`);
-benchmark(wff);
+document.addEventListener('DOMContentLoaded', () => {
+  const generateButton = document.getElementById('generateButton');
+  const submitButton = document.getElementById('submitButton');
+  const wffTextarea = document.getElementById('wffTextarea');
+  const resultDiv = document.getElementById('result');
+  generateButton.addEventListener('click', e => {
+    e.preventDefault();
+    const wff = generateWff(5);
+    wffTextarea.value = wff;
+  });
 
-window.generateWff = generateWff;
-window.generateWffWithOnes = generateWffWithOnes;
-window.benchmark = benchmark;
+  submitButton.addEventListener('click', e => {
+    e.preventDefault();
+    const result = isSat(wffTextarea.value, true);
+    console.log(result);
+    resultDiv.value = result;
+  });
+});
+
+// const wff = generateWff(15);
+// console.log(`Testing this formula: '${wff}'`);
+// benchmark(wff);
+
+// window.generateWff = generateWff;
+// window.generateWffWithOnes = generateWffWithOnes;
+// window.benchmark = benchmark;
