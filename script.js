@@ -73,13 +73,55 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.benchmark = exports.generateWff = exports.generateWffNotDistinct = exports.generateWffWithOnes = undefined;
+exports.generateWff = exports.generateWffNotDistinct = exports.generateWffWithOnes = exports.benchmark = undefined;
 
 var _booleanLogic = __webpack_require__(1);
 
 var _booleanLogic2 = _interopRequireDefault(_booleanLogic);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var benchmark = exports.benchmark = function benchmark(wff) {
+  var beforeParseDate = new Date();
+  var beforeParseTime = beforeParseDate.getTime();
+  var parsedWff = _booleanLogic2.default._parse(wff, true);
+  var afterParseDate = new Date();
+  var afterParseTime = afterParseDate.getTime();
+  var parseDuration = afterParseTime - beforeParseTime;
+
+  var beforeGenerateModelsDate = new Date();
+  var beforeGenerateModelsTime = beforeGenerateModelsDate.getTime();
+  if (!parsedWff) {
+    return;
+  }
+  debugger;
+  var models = _booleanLogic2.default._generateModels(parsedWff);
+  var afterGenerateModelsDate = new Date();
+  var afterGenerateModelsTime = afterGenerateModelsDate.getTime();
+  var generateModelsDuration = afterGenerateModelsTime - beforeGenerateModelsTime;
+
+  var beforeCheckDate = new Date();
+  var result = _booleanLogic2.default._checkModels(parsedWff, models, true);
+  var afterCheckDate = new Date();
+  var afterCheckTime = afterCheckDate.getTime();
+  var checkDuration = afterCheckTime - beforeCheckTime;
+
+  if (Boolean(result)) {
+    console.log('The formula is satisfiable.');
+    console.log('The first model found was:');
+    console.log(result);
+    console.log('It took ' + parseDuration + ' milliseconds to parse the wff.');
+    console.log('It took ' + generateModelsDuration + ' milliseconds to generate all models of this wff.');
+    console.log('It took ' + checkDuration + ' milliseconds to find the above model.');
+    console.log('It took ' + (generateModelsDuration + checkDuration) + ' milliseconds to generate all models of this wff and to find the above model.');
+  } else {
+    console.log("The formula isn't satisfiable.");
+    console.log('It took ' + parseDuration + ' milliseconds to parse the wff.');
+    console.log('It took ' + generateModelsDuration + ' milliseconds to generate all models of this wff.');
+    console.log('It took ' + checkDuration + ' milliseconds to check every model.');
+    console.log('It took ' + (generateModelsDuration + checkDuration) + ' milliseconds to generate all models of this wff and to check all of them.');
+  }
+};
 
 var generateWffWithOnes = exports.generateWffWithOnes = function generateWffWithOnes(numAtoms) {
   var connectives = ['N', 'A', 'O', 'X', 'T', 'B'];
@@ -129,41 +171,23 @@ var generateWff = exports.generateWff = function generateWff(numAtoms) {
   return wff;
 };
 
-var benchmark = exports.benchmark = function benchmark(wff) {
-  var beforeDate = new Date();
-  var beforeTime = beforeDate.getTime();
-  var result = (0, _booleanLogic.isSat)(wff, true);
-  var afterDate = new Date();
-  var afterTime = afterDate.getTime();
-  var duration = afterTime - beforeTime;
-
-  if (Boolean(result)) {
-    console.log('The formula is satisfiable.');
-    console.log('The first model found was:');
-    console.log(result);
-    console.log('It took ' + duration + ' milliseconds to find this model.');
-  } else {
-    console.log("The formula isn't satisfiable.");
-    console.log('It took ' + duration + ' milliseconds to determine this.');
-  }
-};
-
 document.addEventListener('DOMContentLoaded', function () {
   var generateButton = document.getElementById('generateButton');
   var submitButton = document.getElementById('submitButton');
   var wffTextarea = document.getElementById('wffTextarea');
+  var wffLengthInput = document.getElementById('wffLength');
   var resultDiv = document.getElementById('result');
   generateButton.addEventListener('click', function (e) {
     e.preventDefault();
+    var wffLength = parseInt(wffLengthInput.value);
     var wff = generateWff(5);
     wffTextarea.value = wff;
   });
 
   submitButton.addEventListener('click', function (e) {
     e.preventDefault();
-    var result = (0, _booleanLogic.isSat)(wffTextarea.value, true);
-    console.log(result);
-    resultDiv.value = result;
+    var result = benchmark(wffTextarea.value);
+    resultDiv.innerText = result;
   });
 });
 
@@ -269,23 +293,26 @@ class Logic {
   }
 }
 
-Logic.isTrue = function(array, model) {
-  const parsed = Logic._parse(array);
+Logic.isTrue = function(wff, model) {
+  const parsed = Logic._parse(wff);
   if (!parsed) {
     return;
   }
   return parsed.isTrue(model);
 };
 
-Logic.isSat = function(array, returnModel) {
-  const parsed = Logic._parse(array);
-  if (!parsed) {
+Logic.isSat = function(wff, returnModel) {
+  const parsedWff = Logic._parse(wff);
+  if (!parsedWff) {
     return;
   }
-  const models = this._generateModels(array);
-  console.log("Done generating models. Finding model.");
+  const models = this._generateModels(wff);
+  return this._checkModels(parsedWff, models, returnModel);
+};
+
+Logic._checkModels = function(parsedWff, models, returnModel) {
   for (let i = 0; i < models.length; i++) {
-    if (parsed.isTrue(models[i])) {
+    if (parsedWff.isTrue(models[i])) {
       return returnModel ? models[i] : true;
     }
   }
@@ -310,8 +337,8 @@ Logic._connectives = {
   N: sentence => !sentence,
 };
 
-Logic._generateModels = function(array) {
-  const atomics = this._atomics(array);
+Logic._generateModels = function(wff) {
+  const atomics = this._atomics(wff);
   const subsets = this._subsets(atomics);
   return subsets.map(subset => {
     const newModel = {};
@@ -326,13 +353,13 @@ Logic._generateModels = function(array) {
   });
 };
 
-Logic._atomics = function(array) {
-  array = this._ensureIsArray(array);
-  if (!array) {
+Logic._atomics = function(wff) {
+  wff = this._ensureIsArray(wff);
+  if (!wff) {
     return;
   }
   const atomics = [];
-  array.forEach(el => {
+  wff.forEach(el => {
     if (this._isAtomic(el) && !atomics.includes(el)) {
       atomics.push(el);
     }
@@ -340,39 +367,39 @@ Logic._atomics = function(array) {
   return atomics;
 };
 
-Logic._parse = function(array) {
-  this._ensureIsLegal(array);
-  array = Logic._ensureIsArray(array);
-  if (!array) {
+Logic._parse = function(wff) {
+  this._ensureIsLegal(wff);
+  wff = Logic._ensureIsArray(wff);
+  if (!wff) {
     throw 'Argument must be either a string or an array';
   }
-  const mainConnectiveIdx = this._mainConnectiveIdx(array);
-  const mainConnective = array[mainConnectiveIdx];
-  if (array.length === 1 && Logic._isAtomic(array[0])) {
-    return new Logic(array[0]);
+  const mainConnectiveIdx = this._mainConnectiveIdx(wff);
+  const mainConnective = wff[mainConnectiveIdx];
+  if (wff.length === 1 && Logic._isAtomic(wff[0])) {
+    return new Logic(wff[0]);
   } else if (
-    array[0] === '(' &&
-    array.length > 3 &&
-    this._matchingClosingParensIdx(array, 0) === array.length - 1
+    wff[0] === '(' &&
+    wff.length > 3 &&
+    this._matchingClosingParensIdx(wff, 0) === wff.length - 1
   ) {
     if (
-      array[1] === '(' &&
-      this._matchingClosingParensIdx(array, 1) === array.length - 2
+      wff[1] === '(' &&
+      this._matchingClosingParensIdx(wff, 1) === wff.length - 2
     ) {
       return;
     } else {
-      return this._parse(array.slice(1, array.length - 1));
+      return this._parse(wff.slice(1, wff.length - 1));
     }
   } else if (mainConnectiveIdx === 0) {
-    const prejacent = this._parse(array.slice(1));
-    const connective = new Logic(array[mainConnectiveIdx]);
+    const prejacent = this._parse(wff.slice(1));
+    const connective = new Logic(wff[mainConnectiveIdx]);
     if (prejacent) {
       connective.addChild(prejacent);
       return connective;
     }
   } else if (mainConnectiveIdx) {
-    const firstConjunct = this._parse(array.slice(0, mainConnectiveIdx));
-    const secondConjunct = this._parse(array.slice(mainConnectiveIdx + 1));
+    const firstConjunct = this._parse(wff.slice(0, mainConnectiveIdx));
+    const secondConjunct = this._parse(wff.slice(mainConnectiveIdx + 1));
     if (firstConjunct && secondConjunct) {
       const connective = new Logic(mainConnective);
       if (mainConnective) {
@@ -558,18 +585,18 @@ Logic._remove = function(sentArr, el) {
   if (idx !== -1) sentArr.splice(idx, 1);
 };
 
-Logic._ensureIsArray = function(array) {
-  if (typeof array === 'string') {
-    array = this._parseString(array);
-  } else if (!(array instanceof Array)) {
+Logic._ensureIsArray = function(wff) {
+  if (typeof wff === 'string') {
+    wff = this._parseString(wff);
+  } else if (!(wff instanceof Array)) {
     return;
   }
-  return array;
+  return wff;
 };
 
-Logic._ensureIsLegal = function(array) {
-  for (let i = 0; i < array.length; i++) {
-    if (!this._vocabulary.includes(array[i]) && !this._isAtomic(array[i])) {
+Logic._ensureIsLegal = function(wff) {
+  for (let i = 0; i < wff.length; i++) {
+    if (!this._vocabulary.includes(wff[i]) && !this._isAtomic(wff[i])) {
       throw "Argument can only contain 'N', 'A', 'O', 'T', 'B', 'X', '(', ')', 't', 'f', and numerals (strings of integers)";
     }
   }

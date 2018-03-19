@@ -1,5 +1,60 @@
 import Logic, { isSat } from 'boolean-logic';
 
+export const benchmark = wff => {
+  const beforeParseDate = new Date();
+  const beforeParseTime = beforeParseDate.getTime();
+  const parsedWff = Logic._parse(wff, true);
+  const afterParseDate = new Date();
+  const afterParseTime = afterParseDate.getTime();
+  const parseDuration = afterParseTime - beforeParseTime;
+
+  const beforeGenerateModelsDate = new Date();
+  const beforeGenerateModelsTime = beforeGenerateModelsDate.getTime();
+  if (!parsedWff) {
+    return;
+  }
+  debugger;
+  const models = Logic._generateModels(parsedWff);
+  const afterGenerateModelsDate = new Date();
+  const afterGenerateModelsTime = afterGenerateModelsDate.getTime();
+  const generateModelsDuration =
+    afterGenerateModelsTime - beforeGenerateModelsTime;
+
+  const beforeCheckDate = new Date();
+  const result = Logic._checkModels(parsedWff, models, true);
+  const afterCheckDate = new Date();
+  const afterCheckTime = afterCheckDate.getTime();
+  const checkDuration = afterCheckTime - beforeCheckTime;
+
+  if (Boolean(result)) {
+    console.log('The formula is satisfiable.');
+    console.log(`The first model found was:`);
+    console.log(result);
+    console.log(`It took ${parseDuration} milliseconds to parse the wff.`);
+    console.log(
+      `It took ${generateModelsDuration} milliseconds to generate all models of this wff.`
+    );
+    console.log(
+      `It took ${checkDuration} milliseconds to find the above model.`
+    );
+    console.log(
+      `It took ${generateModelsDuration +
+        checkDuration} milliseconds to generate all models of this wff and to find the above model.`
+    );
+  } else {
+    console.log("The formula isn't satisfiable.");
+    console.log(`It took ${parseDuration} milliseconds to parse the wff.`);
+    console.log(
+      `It took ${generateModelsDuration} milliseconds to generate all models of this wff.`
+    );
+    console.log(`It took ${checkDuration} milliseconds to check every model.`);
+    console.log(
+      `It took ${generateModelsDuration +
+        checkDuration} milliseconds to generate all models of this wff and to check all of them.`
+    );
+  }
+};
+
 export const generateWffWithOnes = numAtoms => {
   const connectives = ['N', 'A', 'O', 'X', 'T', 'B'];
   if (numAtoms === 1) {
@@ -48,41 +103,23 @@ export const generateWff = numAtoms => {
   return wff;
 };
 
-export const benchmark = wff => {
-  const beforeDate = new Date();
-  const beforeTime = beforeDate.getTime();
-  const result = isSat(wff, true);
-  const afterDate = new Date();
-  const afterTime = afterDate.getTime();
-  const duration = afterTime - beforeTime;
-
-  if (Boolean(result)) {
-    console.log('The formula is satisfiable.');
-    console.log(`The first model found was:`);
-    console.log(result);
-    console.log(`It took ${duration} milliseconds to find this model.`);
-  } else {
-    console.log("The formula isn't satisfiable.");
-    console.log(`It took ${duration} milliseconds to determine this.`);
-  }
-};
-
 document.addEventListener('DOMContentLoaded', () => {
   const generateButton = document.getElementById('generateButton');
   const submitButton = document.getElementById('submitButton');
   const wffTextarea = document.getElementById('wffTextarea');
+  const wffLengthInput = document.getElementById('wffLength');
   const resultDiv = document.getElementById('result');
   generateButton.addEventListener('click', e => {
     e.preventDefault();
+    const wffLength = parseInt(wffLengthInput.value);
     const wff = generateWff(5);
     wffTextarea.value = wff;
   });
 
   submitButton.addEventListener('click', e => {
     e.preventDefault();
-    const result = isSat(wffTextarea.value, true);
-    console.log(result);
-    resultDiv.value = result;
+    const result = benchmark(wffTextarea.value);
+    resultDiv.innerText = result;
   });
 });
 
