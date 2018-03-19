@@ -1,5 +1,65 @@
 import Logic, { isSat } from 'boolean-logic';
 
+export const benchmark = (wff, resultDiv) => {
+  const beforeParseDate = new Date();
+  const beforeParseTime = beforeParseDate.getTime();
+  const parsedWff = Logic._parse(wff, true);
+  const afterParseDate = new Date();
+  const afterParseTime = afterParseDate.getTime();
+  const parseDuration = afterParseTime - beforeParseTime;
+
+  const beforeGenerateModelsDate = new Date();
+  const beforeGenerateModelsTime = beforeGenerateModelsDate.getTime();
+  if (!parsedWff) {
+    return;
+  }
+  const models = Logic._generateModels(wff);
+  const afterGenerateModelsDate = new Date();
+  const afterGenerateModelsTime = afterGenerateModelsDate.getTime();
+  const generateModelsDuration =
+    afterGenerateModelsTime - beforeGenerateModelsTime;
+
+  const beforeCheckDate = new Date();
+  const beforeCheckTime = beforeCheckDate.getTime();
+  const result = Logic._checkModels(parsedWff, models, true);
+  const afterCheckDate = new Date();
+  const afterCheckTime = afterCheckDate.getTime();
+  const checkDuration = afterCheckTime - beforeCheckTime;
+
+  if (Boolean(result)) {
+    let resultString = '';
+    for (let key in result) {
+      resultString = `${resultString}<br />&nbsp;&nbsp;${key}: ${result[key]}`;
+    }
+    resultDiv.innerHTML = `
+      <p>The formula is satisfiable.</p>
+      <p>The first model found was:</p>
+      <p>{${resultString}<br />}</p>
+      <p>It took ${parseDuration} milliseconds to parse the wff.</p>
+      <p>
+        It took ${generateModelsDuration} milliseconds to generate all models of this wff.</p>
+      <p>It took ${checkDuration} milliseconds to find the above model.</p>
+      <p>It took ${generateModelsDuration +
+        checkDuration} milliseconds to generate all models of this wff and to find the above model.</p>
+      <p>It took ${parseDuration +
+        generateModelsDuration +
+        checkDuration} milliseconds to do everything.</p>
+    `;
+  } else {
+    resultDiv.innerHTML = `
+      <p>The formula isn't satisfiable</p>
+      <p>It took ${parseDuration} milliseconds to parse the wff.</p>
+      <p>It took ${generateModelsDuration} milliseconds to generate all models of this wff.</p>
+      <p>It took ${checkDuration} milliseconds to check every model.</p>
+      <p>It took ${generateModelsDuration +
+        checkDuration} milliseconds to generate all models of this wff and to check all of them.</p>
+      <p>It took ${parseDuration +
+        generateModelsDuration +
+        checkDuration} milliseconds to do everything.</p>
+    `;
+  }
+};
+
 export const generateWffWithOnes = numAtoms => {
   const connectives = ['N', 'A', 'O', 'X', 'T', 'B'];
   if (numAtoms === 1) {
@@ -48,41 +108,22 @@ export const generateWff = numAtoms => {
   return wff;
 };
 
-export const benchmark = wff => {
-  const beforeDate = new Date();
-  const beforeTime = beforeDate.getTime();
-  const result = isSat(wff, true);
-  const afterDate = new Date();
-  const afterTime = afterDate.getTime();
-  const duration = afterTime - beforeTime;
-
-  if (Boolean(result)) {
-    console.log('The formula is satisfiable.');
-    console.log(`The first model found was:`);
-    console.log(result);
-    console.log(`It took ${duration} milliseconds to find this model.`);
-  } else {
-    console.log("The formula isn't satisfiable.");
-    console.log(`It took ${duration} milliseconds to determine this.`);
-  }
-};
-
 document.addEventListener('DOMContentLoaded', () => {
   const generateButton = document.getElementById('generateButton');
   const submitButton = document.getElementById('submitButton');
   const wffTextarea = document.getElementById('wffTextarea');
+  const wffLengthInput = document.getElementById('wffLength');
   const resultDiv = document.getElementById('result');
   generateButton.addEventListener('click', e => {
     e.preventDefault();
-    const wff = generateWff(5);
+    const wffLength = parseInt(wffLengthInput.value);
+    const wff = generateWff(wffLength);
     wffTextarea.value = wff;
   });
 
   submitButton.addEventListener('click', e => {
     e.preventDefault();
-    const result = isSat(wffTextarea.value, true);
-    console.log(result);
-    resultDiv.value = result;
+    const result = benchmark(wffTextarea.value, resultDiv);
   });
 });
 
