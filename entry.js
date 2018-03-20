@@ -105,7 +105,12 @@ export const generateWff = numAtoms => {
     numNotDistinct = Math.floor(Math.random() * numAtoms * 10) + 1;
     wff = generateWffNotDistinct(numNotDistinct);
   }
-  return wff;
+  const negationProbability = Math.random();
+  if (negationProbability < 0.5) {
+    return wff;
+  } else {
+    return `(N${wff})`;
+  }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
