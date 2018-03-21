@@ -22,8 +22,11 @@
     "webpack-dev-server": "^2.10.1"
   },
   "repository": "git+https://github.com/m1010j/sat-zoo.git",
-  "keywords": ["logic", "boolean", "satisfiability"],
-  "author": "Matthias Jenny",
+  "keywords": [
+    "logic",
+    "boolean",
+    "satisfiability"
+  ],
   "email": "matthiascjenny@gmail.com",
   "url": "http://www.matthiasjenny.com",
   "license": "MIT",

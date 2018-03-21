@@ -1,6 +1,52 @@
-import Logic, { isSat } from 'boolean-logic';
+import Logic, { isTrue } from 'boolean-logic';
 
-export const benchmark = (wff, resultDiv) => {
+document.addEventListener('DOMContentLoaded', () => {
+  const generateButton = document.getElementById('generateButton');
+  const submitButton = document.getElementById('submitButton');
+  const wffTextarea = document.getElementById('wffTextarea');
+  const wffLengthInput = document.getElementById('wffLength');
+  const resultDiv = document.getElementById('result');
+  generateButton.addEventListener('click', e => {
+    e.preventDefault();
+    const wffLength = parseInt(wffLengthInput.value);
+    const wff = generateWff(wffLength);
+    wffTextarea.value = wff;
+    resultDiv.innerHTML = '';
+  });
+
+  submitButton.addEventListener('click', e => {
+    e.preventDefault();
+    const result = benchmark(wffTextarea.value, resultDiv);
+  });
+
+  if (wffTextarea.addEventListener) {
+    wffTextarea.addEventListener(
+      'input',
+      function() {
+        resultDiv.innerHTML = '';
+      },
+      false
+    );
+  } else if (wffTextarea.attachEvent) {
+    wffTextarea.attachEvent('onpropertychange', function() {
+      resultDiv.innerHTML = '';
+    });
+  }
+});
+
+function checkModels(parsedWff, models) {
+  for (let i = 0; i < models.length; i++) {
+    if (parsedWff.isTrue(models[i])) {
+      return {
+        model: models[i],
+        modelNumber: i + 1,
+      };
+    }
+  }
+  return false;
+}
+
+function benchmark(wff, resultDiv) {
   const beforeParseDate = new Date();
   const beforeParseTime = beforeParseDate.getTime();
   const parsedWff = Logic._parse(wff, true);
@@ -21,15 +67,32 @@ export const benchmark = (wff, resultDiv) => {
 
   const beforeCheckDate = new Date();
   const beforeCheckTime = beforeCheckDate.getTime();
-  const result = Logic._checkModels(parsedWff, models, true);
+  const result = checkModels(parsedWff, models);
   const afterCheckDate = new Date();
   const afterCheckTime = afterCheckDate.getTime();
   const checkDuration = afterCheckTime - beforeCheckTime;
 
+  const browserName = navigator.appName;
+  const browserEngine = navigator.product;
+  const browserVersion1a = navigator.appVersion;
+  const browserVersion1b = navigator.userAgent;
+  const browserOnline = navigator.onLine;
+  const browserPlatform = navigator.platform;
+
+  const browserInfo = `
+  <p>Browser name: ${browserName}</p>
+  <p>Browser engine: ${browserEngine}</p>
+  <p>Browser version 1a: ${browserVersion1a}</p>
+  <p>Browser version 1b: ${browserVersion1b}</p>
+  <p>Browser platform: ${browserPlatform}</p>
+  `;
+
   if (Boolean(result)) {
     let resultString = '';
-    for (let key in result) {
-      resultString = `${resultString}<br />&nbsp;&nbsp;${key}: ${result[key]}`;
+    for (let key in result.model) {
+      resultString = `${resultString}<br />&nbsp;&nbsp;${key}: ${
+        result.model[key]
+      }`;
     }
     resultDiv.innerHTML = `
       <p>The formula is satisfiable.</p>
@@ -37,30 +100,40 @@ export const benchmark = (wff, resultDiv) => {
       <p>{${resultString}<br />}</p>
       <p>It took ${parseDuration} milliseconds to parse the wff.</p>
       <p>
-        It took ${generateModelsDuration} milliseconds to generate all models of this wff.</p>
+        It took ${generateModelsDuration} milliseconds to generate all ${
+      models.length
+    } models of this wff.</p>
       <p>It took ${checkDuration} milliseconds to find the above model.</p>
-      <p>It took ${generateModelsDuration +
-        checkDuration} milliseconds to generate all models of this wff and to find the above model.</p>
-      <p>It took ${parseDuration +
-        generateModelsDuration +
-        checkDuration} milliseconds to do everything.</p>
+      <p>The above model was the ${nth(result.modelNumber)} model checked.</p>
+      ${browserInfo}
     `;
   } else {
     resultDiv.innerHTML = `
       <p>The formula isn't satisfiable</p>
       <p>It took ${parseDuration} milliseconds to parse the wff.</p>
-      <p>It took ${generateModelsDuration} milliseconds to generate all models of this wff.</p>
+      <p>It took ${generateModelsDuration} milliseconds to generate all ${
+      models.length
+    } models of this wff.</p>
       <p>It took ${checkDuration} milliseconds to check every model.</p>
-      <p>It took ${generateModelsDuration +
-        checkDuration} milliseconds to generate all models of this wff and to check all of them.</p>
-      <p>It took ${parseDuration +
-        generateModelsDuration +
-        checkDuration} milliseconds to do everything.</p>
+      ${browserInfo}
     `;
   }
-};
+}
 
-export const generateWffWithOnes = numAtoms => {
+function nth(num) {
+  if (num % 10 === 1) {
+    return `${num}st`;
+  } else if (num % 10 === 2) {
+    return `${num}nd`;
+  }
+  if (num % 10 === 3) {
+    return `${num}rd`;
+  } else {
+    return `${num}th`;
+  }
+}
+
+function generateWffWithOnes(numAtoms) {
   const connectives = ['N', 'A', 'O', 'X', 'T', 'B'];
   if (numAtoms === 1) {
     const addNegation = Math.floor(Math.random()) > 0.5 ? true : false;
@@ -85,9 +158,9 @@ export const generateWffWithOnes = numAtoms => {
       return `(N${negatumWff})`;
     }
   }
-};
+}
 
-export const generateWffNotDistinct = numAtoms => {
+function generateWffNotDistinct(numAtoms) {
   const wff = generateWffWithOnes(numAtoms);
   const wffArray = wff.split('');
   for (let i = 0; i < wffArray.length; i++) {
@@ -96,9 +169,9 @@ export const generateWffNotDistinct = numAtoms => {
     }
   }
   return wffArray.join('');
-};
+}
 
-export const generateWff = numAtoms => {
+function generateWff(numAtoms) {
   let numNotDistinct = Math.floor(Math.random() * numAtoms * 10) + 1;
   let wff = generateWffNotDistinct(numNotDistinct);
   while (Logic._atomics(wff).length !== numAtoms) {
@@ -111,31 +184,4 @@ export const generateWff = numAtoms => {
   } else {
     return `(N${wff})`;
   }
-};
-
-document.addEventListener('DOMContentLoaded', () => {
-  const generateButton = document.getElementById('generateButton');
-  const submitButton = document.getElementById('submitButton');
-  const wffTextarea = document.getElementById('wffTextarea');
-  const wffLengthInput = document.getElementById('wffLength');
-  const resultDiv = document.getElementById('result');
-  generateButton.addEventListener('click', e => {
-    e.preventDefault();
-    const wffLength = parseInt(wffLengthInput.value);
-    const wff = generateWff(wffLength);
-    wffTextarea.value = wff;
-  });
-
-  submitButton.addEventListener('click', e => {
-    e.preventDefault();
-    const result = benchmark(wffTextarea.value, resultDiv);
-  });
-});
-
-// const wff = generateWff(15);
-// console.log(`Testing this formula: '${wff}'`);
-// benchmark(wff);
-
-// window.generateWff = generateWff;
-// window.generateWffWithOnes = generateWffWithOnes;
-// window.benchmark = benchmark;
+}
