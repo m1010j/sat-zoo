@@ -1,4 +1,5 @@
 import Logic, { isTrue } from 'boolean-logic';
+import firebase, { app, database } from 'firebase';
 
 document.addEventListener('DOMContentLoaded', () => {
   const generateButton = document.getElementById('generateButton');
@@ -184,4 +185,9 @@ function generateWff(numAtoms) {
   } else {
     return `(N${wff})`;
   }
+
+}
+
+function initializeFirebase() {
+  const config = { apiKey: 'AIzaSyBGll1MQuJnfllmhEmFnhzksHwnTiLKosY', authDomain: 'sat-zoo.firebaseapp.com', databaseURL: 'https://sat-zoo.firebaseio.com', projectId: 'sat-zoo', storageBucket: 'sat-zoo.appspot.com', messagingSenderId: '291041690959' };
 }
