@@ -2,6 +2,12 @@ import Logic, { isTrue } from 'boolean-logic';
 import firebase, { app, database } from 'firebase';
 
 document.addEventListener('DOMContentLoaded', () => {
+  initializeFirebase();
+  const ref = firebase.database().ref();
+  ref.once('value').then(function(snapshot) {
+    console.log(snapshot.val().benchmarks);
+  });
+
   const generateButton = document.getElementById('generateButton');
   const submitButton = document.getElementById('submitButton');
   const wffTextarea = document.getElementById('wffTextarea');
@@ -17,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   submitButton.addEventListener('click', e => {
     e.preventDefault();
-    const result = benchmark(wffTextarea.value, resultDiv);
+    benchmark(wffTextarea.value, ref);
   });
 
   if (wffTextarea.addEventListener) {
@@ -47,7 +53,18 @@ function checkModels(parsedWff, models) {
   return false;
 }
 
-function benchmark(wff, resultDiv) {
+function benchmark(wff, ref) {
+  const generateButton = document.getElementById('generateButton');
+  const submitButton = document.getElementById('submitButton');
+  const wffTextarea = document.getElementById('wffTextarea');
+  const resultDiv = document.getElementById('result');
+  const wffLengthInput = document.getElementById('wffLength');
+
+  generateButton.disabled = true;
+  submitButton.disabled = true;
+  wffTextarea.disabled = true;
+  wffLengthInput.disabled = true;
+
   const beforeParseDate = new Date();
   const beforeParseTime = beforeParseDate.getTime();
   const parsedWff = Logic._parse(wff, true);
@@ -75,50 +92,86 @@ function benchmark(wff, resultDiv) {
 
   const browserName = navigator.appName;
   const browserEngine = navigator.product;
-  const browserVersion1a = navigator.appVersion;
-  const browserVersion1b = navigator.userAgent;
+  const browserVersion1 = navigator.appVersion;
+  const browserVersion2 = navigator.userAgent;
   const browserOnline = navigator.onLine;
   const browserPlatform = navigator.platform;
 
-  const browserInfo = `
-  <p>Browser name: ${browserName}</p>
-  <p>Browser engine: ${browserEngine}</p>
-  <p>Browser version 1a: ${browserVersion1a}</p>
-  <p>Browser version 1b: ${browserVersion1b}</p>
-  <p>Browser platform: ${browserPlatform}</p>
-  `;
+  const postData = {
+    wff,
+    isSat: Boolean(result),
+    model: result ? result.model : null,
+    modelNumber: result ? result.modelNumber : null,
+    parseDuration,
+    generateModelsDuration,
+    checkDuration,
+    browser: {
+      browserName,
+      browserEngine,
+      browserVersion1,
+      browserVersion2,
+      browserPlatform,
+    },
+  };
+  const newPostKey = firebase
+    .database()
+    .ref()
+    .child('benchmarks')
+    .push().key;
+  const updates = {};
+  updates['/benchmarks/' + newPostKey] = postData;
+  firebase
+    .database()
+    .ref()
+    .update(updates)
+    .then(() => {
+      generateButton.disabled = false;
+      submitButton.disabled = false;
+      wffTextarea.disabled = false;
+      wffLengthInput.disabled = true;
 
-  if (Boolean(result)) {
-    let resultString = '';
-    for (let key in result.model) {
-      resultString = `${resultString}<br />&nbsp;&nbsp;${key}: ${
-        result.model[key]
-      }`;
-    }
-    resultDiv.innerHTML = `
-      <p>The formula is satisfiable.</p>
-      <p>The first model found was:</p>
-      <p>{${resultString}<br />}</p>
-      <p>It took ${parseDuration} milliseconds to parse the wff.</p>
-      <p>
-        It took ${generateModelsDuration} milliseconds to generate all ${
-      models.length
-    } models of this wff.</p>
-      <p>It took ${checkDuration} milliseconds to find the above model.</p>
-      <p>The above model was the ${nth(result.modelNumber)} model checked.</p>
-      ${browserInfo}
-    `;
-  } else {
-    resultDiv.innerHTML = `
-      <p>The formula isn't satisfiable</p>
-      <p>It took ${parseDuration} milliseconds to parse the wff.</p>
-      <p>It took ${generateModelsDuration} milliseconds to generate all ${
-      models.length
-    } models of this wff.</p>
-      <p>It took ${checkDuration} milliseconds to check every model.</p>
-      ${browserInfo}
-    `;
-  }
+      const browserInfo = `
+      <p>Browser name: ${browserName}</p>
+      <p>Browser engine: ${browserEngine}</p>
+      <p>Browser version 1a: ${browserVersion1}</p>
+      <p>Browser version 1b: ${browserVersion2}</p>
+      <p>Browser platform: ${browserPlatform}</p>
+      `;
+
+      if (result) {
+        let resultString = '';
+        for (let key in result.model) {
+          resultString = `${resultString}<br />&nbsp;&nbsp;${key}: ${
+            result.model[key]
+          }`;
+        }
+        resultDiv.innerHTML = `
+          <p>The formula is satisfiable.</p>
+          <p>The first model found was:</p>
+          <p>{${resultString}<br />}</p>
+          <p>It took ${parseDuration} milliseconds to parse the wff.</p>
+          <p>
+            It took ${generateModelsDuration} milliseconds to generate all ${
+          models.length
+        } models of this wff.</p>
+          <p>It took ${checkDuration} milliseconds to find the above model.</p>
+          <p>The above model was the ${nth(
+            result.modelNumber
+          )} model checked.</p>
+          ${browserInfo}
+        `;
+      } else {
+        resultDiv.innerHTML = `
+          <p>The formula isn't satisfiable</p>
+          <p>It took ${parseDuration} milliseconds to parse the wff.</p>
+          <p>It took ${generateModelsDuration} milliseconds to generate all ${
+          models.length
+        } models of this wff.</p>
+          <p>It took ${checkDuration} milliseconds to check every model.</p>
+          ${browserInfo}
+        `;
+      }
+    });
 }
 
 function nth(num) {
@@ -185,9 +238,16 @@ function generateWff(numAtoms) {
   } else {
     return `(N${wff})`;
   }
-
 }
 
 function initializeFirebase() {
-  const config = { apiKey: 'AIzaSyBGll1MQuJnfllmhEmFnhzksHwnTiLKosY', authDomain: 'sat-zoo.firebaseapp.com', databaseURL: 'https://sat-zoo.firebaseio.com', projectId: 'sat-zoo', storageBucket: 'sat-zoo.appspot.com', messagingSenderId: '291041690959' };
+  const config = {
+    apiKey: 'AIzaSyBGll1MQuJnfllmhEmFnhzksHwnTiLKosY',
+    authDomain: 'sat-zoo.firebaseapp.com',
+    databaseURL: 'https://sat-zoo.firebaseio.com',
+    projectId: 'sat-zoo',
+    storageBucket: 'sat-zoo.appspot.com',
+    messagingSenderId: '291041690959',
+  };
+  firebase.initializeApp(config);
 }
