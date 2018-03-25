@@ -70,18 +70,18 @@
 "use strict";
 
 
-var _booleanLogic = __webpack_require__(85);
-
-var _booleanLogic2 = _interopRequireDefault(_booleanLogic);
-
 var _firebase = __webpack_require__(86);
 
 var _firebase2 = _interopRequireDefault(_firebase);
 
+var _benchmark = __webpack_require__(171);
+
+var _util = __webpack_require__(172);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 document.addEventListener('DOMContentLoaded', function () {
-  initializeFirebase();
+  (0, _util.initializeFirebase)();
   var ref = _firebase2.default.database().ref();
   ref.once('value').then(function (snapshot) {
     console.log(snapshot.val().benchmarks);
@@ -95,14 +95,14 @@ document.addEventListener('DOMContentLoaded', function () {
   generateButton.addEventListener('click', function (e) {
     e.preventDefault();
     var wffLength = parseInt(wffLengthInput.value);
-    var wff = generateWff(wffLength);
+    var wff = (0, _util.generateWff)(wffLength);
     wffTextarea.value = wff;
     resultDiv.innerHTML = '';
   });
 
   submitButton.addEventListener('click', function (e) {
     e.preventDefault();
-    benchmark(wffTextarea.value, ref);
+    (0, _benchmark.benchmark)(wffTextarea.value, ref);
   });
 
   if (wffTextarea.addEventListener) {
@@ -115,223 +115,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 });
-
-function checkModels(parsedWff, models) {
-  for (var i = 0; i < models.length; i++) {
-    if (parsedWff.isTrue(models[i])) {
-      return {
-        model: models[i],
-        modelNumber: i + 1
-      };
-    }
-  }
-  return false;
-}
-
-function benchmark(wff, ref) {
-  var generateButton = document.getElementById('generateButton');
-  var submitButton = document.getElementById('submitButton');
-  var wffTextarea = document.getElementById('wffTextarea');
-  var resultDiv = document.getElementById('result');
-  var wffLengthInput = document.getElementById('wffLength');
-
-  generateButton.disabled = true;
-  submitButton.disabled = true;
-  wffTextarea.disabled = true;
-  wffLengthInput.disabled = true;
-
-  try {
-    var beforeParseDate = new Date();
-    var beforeParseTime = beforeParseDate.getTime();
-    var parsedWff = _booleanLogic2.default._parse(wff, true);
-    var afterParseDate = new Date();
-    var afterParseTime = afterParseDate.getTime();
-    var parseDuration = afterParseTime - beforeParseTime;
-
-    var beforeGenerateModelsDate = new Date();
-    var beforeGenerateModelsTime = beforeGenerateModelsDate.getTime();
-    if (!parsedWff) {
-      resultDiv.innerHTML = '<p>Must provide a well-formed formula.</p>';
-      generateButton.disabled = false;
-      submitButton.disabled = false;
-      wffTextarea.disabled = false;
-      wffLengthInput.disabled = false;
-      return;
-    }
-    wff = parsedWff.stringify();
-    var models = _booleanLogic2.default._generateModels(wff);
-    var afterGenerateModelsDate = new Date();
-    var afterGenerateModelsTime = afterGenerateModelsDate.getTime();
-    var generateModelsDuration = afterGenerateModelsTime - beforeGenerateModelsTime;
-
-    var beforeCheckDate = new Date();
-    var beforeCheckTime = beforeCheckDate.getTime();
-    var result = checkModels(parsedWff, models);
-    var afterCheckDate = new Date();
-    var afterCheckTime = afterCheckDate.getTime();
-    var checkDuration = afterCheckTime - beforeCheckTime;
-
-    var browserName = navigator.appName;
-    var browserEngine = navigator.product;
-    var browserVersion1 = navigator.appVersion;
-    var browserVersion2 = navigator.userAgent;
-    var browserOnline = navigator.onLine;
-    var browserPlatform = navigator.platform;
-
-    var postData = {
-      wff: wff,
-      numAtomics: _booleanLogic2.default._atomics(wff).length,
-      algorithm: 'truth table',
-      isSat: Boolean(result),
-      model: result ? result.model : null,
-      modelNumber: result ? result.modelNumber : null,
-      parseDuration: parseDuration,
-      generateModelsDuration: generateModelsDuration,
-      checkDuration: checkDuration,
-      browser: {
-        browserName: browserName,
-        browserEngine: browserEngine,
-        browserVersion1: browserVersion1,
-        browserVersion2: browserVersion2,
-        browserPlatform: browserPlatform
-      }
-    };
-    var newPostKey = _firebase2.default.database().ref().child('benchmarks').push().key;
-    var updates = {};
-    updates['/benchmarks/' + newPostKey] = postData;
-    _firebase2.default.database().ref().update(updates).then(function () {
-      generateButton.disabled = false;
-      submitButton.disabled = false;
-      wffTextarea.disabled = false;
-      wffLengthInput.disabled = false;
-
-      var browserInfo = '\n        <p>Browser name: ' + browserName + '</p>\n        <p>Browser engine: ' + browserEngine + '</p>\n        <p>Browser version 1a: ' + browserVersion1 + '</p>\n        <p>Browser version 1b: ' + browserVersion2 + '</p>\n        <p>Browser platform: ' + browserPlatform + '</p>\n        ';
-
-      if (result) {
-        var resultString = '';
-        for (var key in result.model) {
-          resultString = resultString + '<br />&nbsp;&nbsp;' + key + ': ' + result.model[key];
-        }
-        resultDiv.innerHTML = '\n            <p>The formula is satisfiable.</p>\n            <p>The first model found was:</p>\n            <p>{' + resultString + '<br />}</p>\n            <p>It took ' + parseDuration + ' milliseconds to parse the wff.</p>\n            <p>\n              It took ' + generateModelsDuration + ' milliseconds to generate all ' + models.length + ' models of this wff.</p>\n            <p>It took ' + checkDuration + ' milliseconds to find the above model.</p>\n            <p>The above model was the ' + nth(result.modelNumber) + ' model checked.</p>\n            ' + browserInfo + '\n          ';
-      } else {
-        resultDiv.innerHTML = '\n            <p>The formula isn\'t satisfiable</p>\n            <p>It took ' + parseDuration + ' milliseconds to parse the wff.</p>\n            <p>It took ' + generateModelsDuration + ' milliseconds to generate all ' + models.length + ' models of this wff.</p>\n            <p>It took ' + checkDuration + ' milliseconds to check every model.</p>\n            ' + browserInfo + '\n          ';
-      }
-    });
-  } catch (error) {
-    resultDiv.innerHTML = '<p>' + error + '</p>';
-    generateButton.disabled = false;
-    submitButton.disabled = false;
-    wffTextarea.disabled = false;
-    wffLengthInput.disabled = false;
-  }
-}
-
-function nth(num) {
-  if (num % 10 === 1) {
-    return num + 'st';
-  } else if (num % 10 === 2) {
-    return num + 'nd';
-  }
-  if (num % 10 === 3) {
-    return num + 'rd';
-  } else {
-    return num + 'th';
-  }
-}
-
-function generateWffWithOnes(numAtoms) {
-  var connectives = ['N', 'A', 'O', 'X', 'T', 'B'];
-  if (numAtoms === 1) {
-    var addNegation = Math.floor(Math.random()) > 0.5 ? true : false;
-    if (addNegation) {
-      return '(N1)';
-    } else {
-      return '1';
-    }
-  } else if (numAtoms === 2) {
-    var connIdx = Math.floor(Math.random() * 5) + 1;
-    return '(1' + connectives[connIdx] + '1)';
-  } else {
-    var _connIdx = Math.floor(Math.random() * 6);
-    if (_connIdx > 0) {
-      var firstNumAtoms = Math.floor(Math.random() * (numAtoms - 1)) + 1;
-      var secondNumAtoms = numAtoms - firstNumAtoms;
-      var firstWff = generateWffWithOnes(firstNumAtoms);
-      var secondWff = generateWffWithOnes(secondNumAtoms);
-      return '(' + firstWff + connectives[_connIdx] + secondWff + ')';
-    } else {
-      var negatumWff = generateWffWithOnes(numAtoms);
-      return '(N' + negatumWff + ')';
-    }
-  }
-}
-
-function generateWffNotDistinct(numAtoms) {
-  var wff = generateWffWithOnes(numAtoms);
-  var wffArray = wff.split('');
-  for (var i = 0; i < wffArray.length; i++) {
-    if (wffArray[i] === '1') {
-      wffArray[i] = Math.floor(Math.random() * numAtoms) + 1;
-    }
-  }
-  return wffArray.join('');
-}
-
-function generateWff(numAtoms) {
-  var numNotDistinct = Math.floor(Math.random() * numAtoms * 10) + 1;
-  var wff = generateWffNotDistinct(numNotDistinct);
-  while (_booleanLogic2.default._atomics(wff).length !== numAtoms) {
-    numNotDistinct = Math.floor(Math.random() * numAtoms * 10) + 1;
-    wff = generateWffNotDistinct(numNotDistinct);
-  }
-  var negationProbability = Math.random();
-  if (negationProbability < 0.5) {
-    return wff;
-  } else {
-    return '(N' + wff + ')';
-  }
-}
-
-function initializeFirebase() {
-  var config = {
-    apiKey: 'AIzaSyBGll1MQuJnfllmhEmFnhzksHwnTiLKosY',
-    authDomain: 'sat-zoo.firebaseapp.com',
-    databaseURL: 'https://sat-zoo.firebaseio.com',
-    projectId: 'sat-zoo',
-    storageBucket: 'sat-zoo.appspot.com',
-    messagingSenderId: '291041690959'
-  };
-  _firebase2.default.initializeApp(config);
-}
-
-function autoGenerateBenchmarks() {
-  var generateButton = document.getElementById('generateButton');
-  var submitButton = document.getElementById('submitButton');
-  var wffLengthInput = document.getElementById('wffLength');
-  var wffTextarea = document.getElementById('wffTextarea');
-
-  var maxLength = void 0;
-  var over20 = Math.floor(Math.random()) > 0.7;
-  if (over20) {
-    maxLength = 25;
-  } else {
-    maxLength = 20;
-  }
-
-  if (!wffLengthInput.disabled) {
-    var length = Math.floor(Math.random() * maxLength) + 1;
-    wffLengthInput.value = length;
-    generateButton.click();
-    setTimeout(function () {
-      submitButton.click();
-      setTimeout(autoGenerateBenchmarks, 100);
-    }, 100);
-  } else {
-    setTimeout(autoGenerateBenchmarks, 1000);
-  }
-}
-
-window.autoGenerateBenchmarks = autoGenerateBenchmarks;
 
 /***/ }),
 /* 1 */
@@ -28101,6 +27884,269 @@ function stop(id) {
 
 //# sourceMappingURL=backoff.js.map
 
+
+/***/ }),
+/* 171 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.benchmark = undefined;
+
+var _firebase = __webpack_require__(86);
+
+var _firebase2 = _interopRequireDefault(_firebase);
+
+var _booleanLogic = __webpack_require__(85);
+
+var _booleanLogic2 = _interopRequireDefault(_booleanLogic);
+
+var _util = __webpack_require__(172);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var benchmark = exports.benchmark = function benchmark(wff, ref) {
+  var generateButton = document.getElementById('generateButton');
+  var submitButton = document.getElementById('submitButton');
+  var wffTextarea = document.getElementById('wffTextarea');
+  var resultDiv = document.getElementById('result');
+  var wffLengthInput = document.getElementById('wffLength');
+
+  generateButton.disabled = true;
+  submitButton.disabled = true;
+  wffTextarea.disabled = true;
+  wffLengthInput.disabled = true;
+
+  try {
+    var beforeParseDate = new Date();
+    var beforeParseTime = beforeParseDate.getTime();
+    var parsedWff = _booleanLogic2.default._parse(wff, true);
+    var afterParseDate = new Date();
+    var afterParseTime = afterParseDate.getTime();
+    var parseDuration = afterParseTime - beforeParseTime;
+
+    var beforeGenerateModelsDate = new Date();
+    var beforeGenerateModelsTime = beforeGenerateModelsDate.getTime();
+    if (!parsedWff) {
+      resultDiv.innerHTML = '<p>Must provide a well-formed formula.</p>';
+      generateButton.disabled = false;
+      submitButton.disabled = false;
+      wffTextarea.disabled = false;
+      wffLengthInput.disabled = false;
+      return;
+    }
+    wff = parsedWff.stringify();
+    var models = _booleanLogic2.default._generateModels(wff);
+    var afterGenerateModelsDate = new Date();
+    var afterGenerateModelsTime = afterGenerateModelsDate.getTime();
+    var generateModelsDuration = afterGenerateModelsTime - beforeGenerateModelsTime;
+
+    var beforeCheckDate = new Date();
+    var beforeCheckTime = beforeCheckDate.getTime();
+    var result = (0, _util.checkModels)(parsedWff, models);
+    var afterCheckDate = new Date();
+    var afterCheckTime = afterCheckDate.getTime();
+    var checkDuration = afterCheckTime - beforeCheckTime;
+
+    var browserName = navigator.appName;
+    var browserEngine = navigator.product;
+    var browserVersion1 = navigator.appVersion;
+    var browserVersion2 = navigator.userAgent;
+    var browserOnline = navigator.onLine;
+    var browserPlatform = navigator.platform;
+
+    var postData = {
+      wff: wff,
+      numAtomics: _booleanLogic2.default._atomics(wff).length,
+      algorithm: 'truth table',
+      isSat: Boolean(result),
+      model: result ? result.model : null,
+      modelNumber: result ? result.modelNumber : null,
+      parseDuration: parseDuration,
+      generateModelsDuration: generateModelsDuration,
+      checkDuration: checkDuration,
+      browser: {
+        browserName: browserName,
+        browserEngine: browserEngine,
+        browserVersion1: browserVersion1,
+        browserVersion2: browserVersion2,
+        browserPlatform: browserPlatform
+      }
+    };
+    var newPostKey = _firebase2.default.database().ref().child('benchmarks').push().key;
+    var updates = {};
+    updates['/benchmarks/' + newPostKey] = postData;
+    _firebase2.default.database().ref().update(updates).then(function () {
+      generateButton.disabled = false;
+      submitButton.disabled = false;
+      wffTextarea.disabled = false;
+      wffLengthInput.disabled = false;
+
+      var browserInfo = '\n        <p>Browser name: ' + browserName + '</p>\n        <p>Browser engine: ' + browserEngine + '</p>\n        <p>Browser version 1a: ' + browserVersion1 + '</p>\n        <p>Browser version 1b: ' + browserVersion2 + '</p>\n        <p>Browser platform: ' + browserPlatform + '</p>\n        ';
+
+      if (result) {
+        var resultString = '';
+        for (var key in result.model) {
+          resultString = resultString + '<br />&nbsp;&nbsp;' + key + ': ' + result.model[key];
+        }
+        resultDiv.innerHTML = '\n            <p>The formula is satisfiable.</p>\n            <p>The first model found was:</p>\n            <p>{' + resultString + '<br />}</p>\n            <p>It took ' + parseDuration + ' milliseconds to parse the wff.</p>\n            <p>\n              It took ' + generateModelsDuration + ' milliseconds to generate all ' + models.length + ' models of this wff.</p>\n            <p>It took ' + checkDuration + ' milliseconds to find the above model.</p>\n            <p>The above model was the ' + (0, _util.nth)(result.modelNumber) + ' model checked.</p>\n            ' + browserInfo + '\n          ';
+      } else {
+        resultDiv.innerHTML = '\n            <p>The formula isn\'t satisfiable</p>\n            <p>It took ' + parseDuration + ' milliseconds to parse the wff.</p>\n            <p>It took ' + generateModelsDuration + ' milliseconds to generate all ' + models.length + ' models of this wff.</p>\n            <p>It took ' + checkDuration + ' milliseconds to check every model.</p>\n            ' + browserInfo + '\n          ';
+      }
+    });
+  } catch (error) {
+    resultDiv.innerHTML = '<p>' + error + '</p>';
+    generateButton.disabled = false;
+    submitButton.disabled = false;
+    wffTextarea.disabled = false;
+    wffLengthInput.disabled = false;
+  }
+};
+
+var autoGenerateBenchmarks = function autoGenerateBenchmarks() {
+  var generateButton = document.getElementById('generateButton');
+  var submitButton = document.getElementById('submitButton');
+  var wffLengthInput = document.getElementById('wffLength');
+  var wffTextarea = document.getElementById('wffTextarea');
+
+  var maxLength = void 0;
+  var over20 = Math.floor(Math.random()) > 0.7;
+  if (over20) {
+    maxLength = 25;
+  } else {
+    maxLength = 20;
+  }
+
+  if (!wffLengthInput.disabled) {
+    var length = Math.floor(Math.random() * maxLength) + 1;
+    wffLengthInput.value = length;
+    generateButton.click();
+    setTimeout(function () {
+      submitButton.click();
+      setTimeout(autoGenerateBenchmarks, 100);
+    }, 100);
+  } else {
+    setTimeout(autoGenerateBenchmarks, 1000);
+  }
+};
+
+window.autoGenerateBenchmarks = autoGenerateBenchmarks;
+
+/***/ }),
+/* 172 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.initializeFirebase = exports.generateWff = exports.nth = exports.checkModels = undefined;
+
+var _booleanLogic = __webpack_require__(85);
+
+var _booleanLogic2 = _interopRequireDefault(_booleanLogic);
+
+var _firebase = __webpack_require__(86);
+
+var _firebase2 = _interopRequireDefault(_firebase);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var checkModels = exports.checkModels = function checkModels(parsedWff, models) {
+  for (var i = 0; i < models.length; i++) {
+    if (parsedWff.isTrue(models[i])) {
+      return {
+        model: models[i],
+        modelNumber: i + 1
+      };
+    }
+  }
+  return false;
+};
+
+var nth = exports.nth = function nth(num) {
+  if (num % 10 === 1) {
+    return num + 'st';
+  } else if (num % 10 === 2) {
+    return num + 'nd';
+  }
+  if (num % 10 === 3) {
+    return num + 'rd';
+  } else {
+    return num + 'th';
+  }
+};
+
+var generateWffWithOnes = function generateWffWithOnes(numAtoms) {
+  var connectives = ['N', 'A', 'O', 'X', 'T', 'B'];
+  if (numAtoms === 1) {
+    var addNegation = Math.floor(Math.random()) > 0.5 ? true : false;
+    if (addNegation) {
+      return '(N1)';
+    } else {
+      return '1';
+    }
+  } else if (numAtoms === 2) {
+    var connIdx = Math.floor(Math.random() * 5) + 1;
+    return '(1' + connectives[connIdx] + '1)';
+  } else {
+    var _connIdx = Math.floor(Math.random() * 6);
+    if (_connIdx > 0) {
+      var firstNumAtoms = Math.floor(Math.random() * (numAtoms - 1)) + 1;
+      var secondNumAtoms = numAtoms - firstNumAtoms;
+      var firstWff = generateWffWithOnes(firstNumAtoms);
+      var secondWff = generateWffWithOnes(secondNumAtoms);
+      return '(' + firstWff + connectives[_connIdx] + secondWff + ')';
+    } else {
+      var negatumWff = generateWffWithOnes(numAtoms);
+      return '(N' + negatumWff + ')';
+    }
+  }
+};
+
+var generateWffNotDistinct = function generateWffNotDistinct(numAtoms) {
+  var wff = generateWffWithOnes(numAtoms);
+  var wffArray = wff.split('');
+  for (var i = 0; i < wffArray.length; i++) {
+    if (wffArray[i] === '1') {
+      wffArray[i] = Math.floor(Math.random() * numAtoms) + 1;
+    }
+  }
+  return wffArray.join('');
+};
+
+var generateWff = exports.generateWff = function generateWff(numAtoms) {
+  var numNotDistinct = Math.floor(Math.random() * numAtoms * 10) + 1;
+  var wff = generateWffNotDistinct(numNotDistinct);
+  while (_booleanLogic2.default._atomics(wff).length !== numAtoms) {
+    numNotDistinct = Math.floor(Math.random() * numAtoms * 10) + 1;
+    wff = generateWffNotDistinct(numNotDistinct);
+  }
+  var negationProbability = Math.random();
+  if (negationProbability < 0.5) {
+    return wff;
+  } else {
+    return '(N' + wff + ')';
+  }
+};
+
+var initializeFirebase = exports.initializeFirebase = function initializeFirebase() {
+  var config = {
+    apiKey: 'AIzaSyBGll1MQuJnfllmhEmFnhzksHwnTiLKosY',
+    authDomain: 'sat-zoo.firebaseapp.com',
+    databaseURL: 'https://sat-zoo.firebaseio.com',
+    projectId: 'sat-zoo',
+    storageBucket: 'sat-zoo.appspot.com',
+    messagingSenderId: '291041690959'
+  };
+  _firebase2.default.initializeApp(config);
+};
 
 /***/ })
 /******/ ]);
