@@ -107,6 +107,7 @@ function benchmark(wff, ref) {
     const postData = {
       wff,
       numAtomics: Logic._atomics(wff).length,
+      algorithm: 'truth table',
       isSat: Boolean(result),
       model: result ? result.model : null,
       modelNumber: result ? result.modelNumber : null,

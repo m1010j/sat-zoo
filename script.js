@@ -181,6 +181,7 @@ function benchmark(wff, ref) {
     var postData = {
       wff: wff,
       numAtomics: _booleanLogic2.default._atomics(wff).length,
+      algorithm: 'truth table',
       isSat: Boolean(result),
       model: result ? result.model : null,
       modelNumber: result ? result.modelNumber : null,
