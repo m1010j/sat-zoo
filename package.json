@@ -15,7 +15,7 @@
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.2",
     "babel-preset-env": "^1.6.1",
-    "boolean-logic": "^1.0.14",
+    "boolean-logic": "^1.1.2",
     "firebase": "^4.12.0",
     "webpack": "^3.8.1"
   },
@@ -23,7 +23,11 @@
     "webpack-dev-server": "^2.10.1"
   },
   "repository": "git+https://github.com/m1010j/sat-zoo.git",
-  "keywords": ["logic", "boolean", "satisfiability"],
+  "keywords": [
+    "logic",
+    "boolean",
+    "satisfiability"
+  ],
   "email": "matthiascjenny@gmail.com",
   "url": "http://www.matthiasjenny.com",
   "license": "MIT",

@@ -1,18 +1,6 @@
 import Logic from 'boolean-logic';
 import firebase from 'firebase';
 
-export const checkModels = (parsedWff, models) => {
-  for (let i = 0; i < models.length; i++) {
-    if (parsedWff.isTrue(models[i])) {
-      return {
-        model: models[i],
-        modelNumber: i + 1,
-      };
-    }
-  }
-  return false;
-};
-
 export const nth = num => {
   if (num % 10 === 1) {
     return `${num}st`;

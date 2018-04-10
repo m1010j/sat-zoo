@@ -1,21 +1,30 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
-  <head>
-    <meta charset="utf-8">
-    <title>Sat Zoo</title>
 
-    <script type="text/javascript" src="./script.js">
-    </script>
-  </head>
-  <body>
-    <form action="index.html" method="post">
-      <textarea id="wffTextarea" name="wff" rows="8" cols="80"></textarea>
-      <input id="wffLength" type="number" name="wffLength" value="5">
-      <button id="generateButton" type="button" name="button">Generate Wff!</button>
-      <input id="submitButton" type="submit" name="" value="Test!">
-    </form>
-    <div id="result">
+<head>
+  <meta charset="utf-8">
+  <title>Sat Zoo</title>
 
+  <script type="text/javascript" src="./script.js">
+  </script>
+</head>
+
+<body>
+  <form action="index.html" method="post">
+    <textarea id="wffTextarea" name="wff" rows="8" cols="80"></textarea>
+    <input id="wffLength" type="number" name="wffLength" value="5">
+    <div class="algorithms">
+      <input type="checkbox" id="brute-force" name="brute-force" value="brute-force" checked>
+      <label for="brute-force"></label>Brute force</label>
+      <input type="checkbox" id="short-tables" name="short-tables" value="short-tables" checked>
+      <label for="short-tables"></label>Short truth tables</label>
     </div>
-  </body>
+    <button id="generateButton" type="button" name="button">Generate Wff!</button>
+    <input id="submitButton" type="submit" name="" value="Test!">
+  </form>
+  <div id="result">
+
+  </div>
+</body>
+
 </html>
