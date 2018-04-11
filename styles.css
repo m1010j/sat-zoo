@@ -1,0 +1,9 @@
+button,
+input[type='submit'] {
+  cursor: pointer;
+}
+
+button:disabled,
+input[type='submit']:disabled {
+  cursor: not-allowed;
+}

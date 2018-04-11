@@ -7,20 +7,13 @@
 
   <script type="text/javascript" src="./script.js">
   </script>
+  <link rel="stylesheet" href="./styles.css">
 </head>
 
 <body>
   <form action="index.html" method="post">
-    <textarea id="wffTextarea" name="wff" rows="8" cols="80"></textarea>
-    <input id="wffLength" type="number" name="wffLength" value="5">
-    <div class="algorithms">
-      <input type="checkbox" id="brute-force" name="brute-force" value="brute-force" checked>
-      <label for="brute-force"></label>Brute force</label>
-      <input type="checkbox" id="short-tables" name="short-tables" value="short-tables" checked>
-      <label for="short-tables"></label>Short truth tables</label>
-    </div>
-    <button id="generateButton" type="button" name="button">Generate Wff!</button>
-    <input id="submitButton" type="submit" name="" value="Test!" disabled>
+    <h1>Sat Zoo</h1>
+    <textarea id="wffTextarea" name="wff" rows="8" cols="80" placeholder="Enter a well-formed formula or generate one below"></textarea>
     <div class="keyboard">
       <button id="top" type="button" name="button">⊤</button>
       <button id="bottom" type="button" name="button">⊥</button>
@@ -34,6 +27,8 @@
       <button id="8" type="button" name="button">8</button>
       <button id="9" type="button" name="button">9</button>
       <button id="0" type="button" name="button">0</button>
+    </div>
+    <div class="keyboard">
       <button id="open-parens" type="button" name="button">(</button>
       <button id="close-parens" type="button" name="button">)</button>
       <button id="not" type="button" name="button">¬</button>
@@ -43,6 +38,15 @@
       <button id="if" type="button" name="button">→</button>
       <button id="iff" type="button" name="button">≡</button>
     </div>
+    <input id="wffLength" type="number" name="wffLength" placeholder="Number of atoms">
+    <button id="generateButton" type="button" name="button" disabled>Generate Formula</button>
+    <div class="algorithms">
+      <input type="checkbox" id="brute-force" name="brute-force" value="brute-force" checked>
+      <label for="brute-force"></label>Brute force</label>
+      <input type="checkbox" id="short-tables" name="short-tables" value="short-tables" checked>
+      <label for="short-tables"></label>Short truth tables</label>
+    </div>
+    <input id="submitButton" type="submit" name="" value="Test" disabled>
   </form>
   <div id="result">
 
