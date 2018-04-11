@@ -18,7 +18,6 @@ export const benchmark = (wff, ref, worker) => {
   if (worker) {
     worker.postMessage({ wff, bruteChecked, shortChecked });
   }
-
   worker.onmessage = e => {
     const postData = e.data;
 

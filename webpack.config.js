@@ -8,12 +8,9 @@ module.exports = {
   module: {
     loaders: [
       {
-        test: [/\.jsx?$/],
+        test: /\.worker\.js$/,
         exclude: /(node_modules)/,
-        loader: 'babel-loader',
-        query: {
-          presets: ['env'],
-        },
+        loader: 'worker!babel?presets[]=env',
       },
     ],
   },

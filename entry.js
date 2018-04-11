@@ -2,6 +2,7 @@ import firebase from 'firebase';
 import { benchmark } from './benchmark';
 import { initializeFirebase, generateWff } from './util';
 import Logic from 'boolean-logic';
+import Worker from 'worker-loader!./Worker.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   initializeFirebase();
@@ -9,13 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // ref.once('value').then(function(snapshot) {
   //   console.log(snapshot.val().benchmarks);
   // });
-
-  let worker;
-
-  if (window.Worker) {
-    worker = new Worker('./worker.js');
-  }
-
   const generateButton = document.getElementById('generateButton');
   const submitButton = document.getElementById('submitButton');
   const wffTextarea = document.getElementById('wffTextarea');
@@ -24,6 +18,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const keyboard = Array.from(document.querySelector('.keyboard').children);
   const bruteButton = document.getElementById('brute-force');
   const shortButton = document.getElementById('short-tables');
+
+  let worker;
+
+  if (window.Worker) {
+    worker = new Worker('./worker.js');
+  } else {
+    resultDiv.innerHTML = `
+      <p>Sat Zoo requires <a href="https://caniuse.com/#feat=webworkers">a browser with Web Worker support</a>.</p>
+    `;
+  }
 
   generateButton.addEventListener('click', e => {
     e.preventDefault();
