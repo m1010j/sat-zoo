@@ -1,9 +1,22 @@
+html {
+  font-family: 'Padauk', sans-serif;
+}
+
 button,
 input[type='submit'] {
   cursor: pointer;
+  font-family: 'Padauk', sans-serif;
+}
+
+input {
+  font-family: 'Padauk', sans-serif;
 }
 
 button:disabled,
 input[type='submit']:disabled {
   cursor: not-allowed;
+}
+
+textarea {
+  font-family: 'Padauk', sans-serif;
 }
