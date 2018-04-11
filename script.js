@@ -15267,43 +15267,231 @@ var _benchmark = __webpack_require__(172);
 
 var _util = __webpack_require__(86);
 
+var _booleanLogic = __webpack_require__(85);
+
+var _booleanLogic2 = _interopRequireDefault(_booleanLogic);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 document.addEventListener('DOMContentLoaded', function () {
   (0, _util.initializeFirebase)();
   var ref = _firebase2.default.database().ref();
-  ref.once('value').then(function (snapshot) {
-    console.log(snapshot.val().benchmarks);
-  });
+  // ref.once('value').then(function(snapshot) {
+  //   console.log(snapshot.val().benchmarks);
+  // });
 
   var generateButton = document.getElementById('generateButton');
   var submitButton = document.getElementById('submitButton');
   var wffTextarea = document.getElementById('wffTextarea');
   var wffLengthInput = document.getElementById('wffLength');
   var resultDiv = document.getElementById('result');
+  var keyboard = Array.from(document.querySelector('.keyboard').children);
+  var bruteButton = document.getElementById('brute-force');
+  var shortButton = document.getElementById('short-tables');
+
   generateButton.addEventListener('click', function (e) {
     e.preventDefault();
     var wffLength = parseInt(wffLengthInput.value);
-    var wff = (0, _util.generateWff)(wffLength);
+    var wff = parseToSym((0, _util.generateWff)(wffLength));
+    submitButton.disabled = false;
     wffTextarea.value = wff;
     resultDiv.innerHTML = '';
   });
 
+  keyboard.forEach(function (key) {
+    key.addEventListener('click', function (e) {
+      var cursorPosition = wffTextarea.selectionStart;
+      var wffArray = wffTextarea.value.split('');
+      wffArray.splice(cursorPosition, 0, toSymDict[key.innerText]);
+      wffTextarea.value = wffArray.join('');
+      wffTextarea.focus();
+      wffTextarea.selectionStart = cursorPosition + 1;
+      wffTextarea.selectionEnd = cursorPosition + 1;
+    });
+  });
+
+  [bruteButton, shortButton].forEach(function (button) {
+    button.addEventListener('click', function (e) {
+      try {
+        if ((bruteButton.checked || shortButton.checked) && _booleanLogic2.default._parse(parseFromSym(wffTextarea.value))) {
+          submitButton.disabled = false;
+        } else {
+          submitButton.disabled = true;
+        }
+      } catch (error) {
+        submitButton.disabled = true;
+      }
+    });
+  });
+
   submitButton.addEventListener('click', function (e) {
     e.preventDefault();
-    (0, _benchmark.benchmark)(wffTextarea.value, ref);
+    (0, _benchmark.benchmark)(parseFromSym(wffTextarea.value), ref);
   });
 
   if (wffTextarea.addEventListener) {
-    wffTextarea.addEventListener('input', function () {
-      resultDiv.innerHTML = '';
+    wffTextarea.addEventListener('input', function (e) {
+      handleInputChange(e, resultDiv);
     }, false);
   } else if (wffTextarea.attachEvent) {
-    wffTextarea.attachEvent('onpropertychange', function () {
-      resultDiv.innerHTML = '';
+    wffTextarea.attachEvent('onpropertychange', function (e) {
+      handleInputChange(e, resultDiv);
     });
   }
 });
+
+var toSymDict = {
+  t: '⊤',
+  f: '⊥',
+  '0': '0',
+  '1': '1',
+  '2': '2',
+  '3': '3',
+  '4': '4',
+  '5': '5',
+  '6': '6',
+  '7': '7',
+  '8': '8',
+  '9': '9',
+  '(': '(',
+  ')': ')',
+  N: '¬',
+  A: '∧',
+  O: '∨',
+  X: '⊻',
+  T: '→',
+  B: '≡',
+  '¬': '¬',
+  '∧': '∧',
+  '∨': '∨',
+  '⊻': '⊻',
+  '→': '→',
+  '≡': '≡',
+  '⊤': '⊤',
+  '⊥': '⊥'
+};
+
+var fromSymDict = {
+  '⊤': 't',
+  '⊥': 'f',
+  '0': '0',
+  '1': '1',
+  '2': '2',
+  '3': '3',
+  '4': '4',
+  '5': '5',
+  '6': '6',
+  '7': '7',
+  '8': '8',
+  '9': '9',
+  '(': '(',
+  ')': ')',
+  '¬': 'N',
+  '∧': 'A',
+  '∨': 'O',
+  '⊻': 'X',
+  '→': 'T',
+  '≡': 'B',
+  t: 't',
+  f: 'f',
+  N: 'N',
+  A: 'A',
+  O: 'O',
+  X: 'X',
+  T: 'T',
+  B: 'B'
+};
+
+var parseToSym = function parseToSym(str) {
+  var parsed = '';
+  var _iteratorNormalCompletion = true;
+  var _didIteratorError = false;
+  var _iteratorError = undefined;
+
+  try {
+    for (var _iterator = str[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var ch = _step.value;
+
+      parsed += toSymDict[ch];
+    }
+  } catch (err) {
+    _didIteratorError = true;
+    _iteratorError = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion && _iterator.return) {
+        _iterator.return();
+      }
+    } finally {
+      if (_didIteratorError) {
+        throw _iteratorError;
+      }
+    }
+  }
+
+  return parsed;
+};
+
+var parseFromSym = function parseFromSym(str) {
+  var parsed = '';
+  var _iteratorNormalCompletion2 = true;
+  var _didIteratorError2 = false;
+  var _iteratorError2 = undefined;
+
+  try {
+    for (var _iterator2 = str[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+      var ch = _step2.value;
+
+      parsed += fromSymDict[ch];
+    }
+  } catch (err) {
+    _didIteratorError2 = true;
+    _iteratorError2 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion2 && _iterator2.return) {
+        _iterator2.return();
+      }
+    } finally {
+      if (_didIteratorError2) {
+        throw _iteratorError2;
+      }
+    }
+  }
+
+  return parsed;
+};
+
+var handleInputChange = function handleInputChange(e, resultDiv) {
+  if (e.data) {
+    var symbol = toSymDict[e.data];
+    if (symbol) {
+      var cursorPosition = wffTextarea.selectionStart;
+      var wffArray = wffTextarea.value.split('');
+      wffArray.splice(cursorPosition - 1, 1, symbol);
+      wffTextarea.value = wffArray.join('');
+      wffTextarea.selectionStart = cursorPosition;
+      wffTextarea.selectionEnd = cursorPosition;
+    } else {
+      var _cursorPosition = wffTextarea.selectionStart;
+      var _wffArray = wffTextarea.value.split('');
+      _wffArray.splice(_cursorPosition - 1, 1);
+      wffTextarea.value = _wffArray.join('');
+      wffTextarea.selectionStart = _cursorPosition;
+      wffTextarea.selectionEnd = _cursorPosition;
+      resultDiv.innerHTML = '\n              <div>\n                The only inputs allowed are:\n                <ul>\n                  <li>\u22A4</li>\n                  <li>\u22A5</li>\n                  <li>0</li>\n                  <li>1</li>\n                  <li>2</li>\n                  <li>3</li>\n                  <li>4</li>\n                  <li>5</li>\n                  <li>6</li>\n                  <li>7</li>\n                  <li>8</li>\n                  <li>9</li>\n                  <li>(</li>\n                  <li>)</li>\n                  <li>\xAC</li>\n                  <li>\u2227</li>\n                  <li>\u2228</li>\n                  <li>\u22BB</li>\n                  <li>\u2192</li>\n                  <li>\u2261</li>\n                </ul>\n                You can also use the following shortcuts:\n                <ul>\n                  <li>t for \u22A4</li>\n                  <li>f for \u22A5</li>\n                  <li>( for (</li>\n                  <li>) for )</li>\n                  <li>N for \xAC</li>\n                  <li>A for \u2227</li>\n                  <li>O for \u2228</li>\n                  <li>X for \u22BB</li>\n                  <li>T for \u2192</li>\n                  <li>B for \u2261</li>\n                </ul>\n              </div>\n            ';
+    }
+  }
+  try {
+    if ((bruteButton.checked || shortButton.checked) && _booleanLogic2.default._parse(parseFromSym(wffTextarea.value))) {
+      submitButton.disabled = false;
+    } else {
+      submitButton.disabled = true;
+    }
+  } catch (error) {
+    submitButton.disabled = true;
+  }
+};
 
 /***/ }),
 /* 88 */
@@ -27686,134 +27874,70 @@ var benchmark = exports.benchmark = function benchmark(wff, ref) {
   wffTextarea.disabled = true;
   wffLengthInput.disabled = true;
 
-  try {
-    var bruteModel = void 0;
-    var bruteTestDuration = void 0;
-    var shortModel = void 0;
-    var shortTestDuration = void 0;
+  var bruteModel = void 0;
+  var bruteTestDuration = void 0;
+  var shortModel = void 0;
+  var shortTestDuration = void 0;
 
-    if (bruteChecked) {
-      var beforeTime = new Date();
-      bruteModel = (0, _booleanLogic.isSat)(wff, true, true);
-      var afterTime = new Date();
-      if (bruteModel === undefined) {
-        resultDiv.innerHTML = '<p>Must provide a well-formed formula.</p>';
-        generateButton.disabled = false;
-        submitButton.disabled = false;
-        wffTextarea.disabled = false;
-        wffLengthInput.disabled = false;
-        return;
+  if (bruteChecked) {
+    var beforeTime = new Date();
+    bruteModel = (0, _booleanLogic.isSat)(wff, true, true);
+    var afterTime = new Date();
+    bruteTestDuration = afterTime.getTime() - beforeTime.getTime();
+  }
+
+  if (shortChecked) {
+    var _beforeTime = new Date();
+    shortModel = (0, _booleanLogic.isSat)(wff, true, false);
+    var _afterTime = new Date();
+    shortTestDuration = _afterTime.getTime() - _beforeTime.getTime();
+  }
+
+  var browserName = navigator.appName;
+  var browserEngine = navigator.product;
+  var browserVersion1 = navigator.appVersion;
+  var browserVersion2 = navigator.userAgent;
+  var browserOnline = navigator.onLine;
+  var browserPlatform = navigator.platform;
+
+  if (bruteChecked) {
+    var postData = {
+      wff: wff,
+      numAtomics: _booleanLogic2.default._atomics(wff).length,
+      algorithm: 'brute',
+      isSat: Boolean(bruteModel),
+      bruteModel: bruteModel ? bruteModel : null,
+      bruteTestDuration: bruteTestDuration,
+      browser: {
+        browserName: browserName,
+        browserEngine: browserEngine,
+        browserVersion1: browserVersion1,
+        browserVersion2: browserVersion2,
+        browserPlatform: browserPlatform
       }
-      bruteTestDuration = afterTime.getTime() - beforeTime.getTime();
-    }
-
-    if (shortChecked) {
-      var _beforeTime = new Date();
-      shortModel = (0, _booleanLogic.isSat)(wff, true, false);
-      var _afterTime = new Date();
-      if (shortModel === undefined) {
-        resultDiv.innerHTML = '<p>Must provide a well-formed formula.</p>';
-        generateButton.disabled = false;
-        submitButton.disabled = false;
-        wffTextarea.disabled = false;
-        wffLengthInput.disabled = false;
-        return;
-      }
-      shortTestDuration = _afterTime.getTime() - _beforeTime.getTime();
-    }
-
-    var browserName = navigator.appName;
-    var browserEngine = navigator.product;
-    var browserVersion1 = navigator.appVersion;
-    var browserVersion2 = navigator.userAgent;
-    var browserOnline = navigator.onLine;
-    var browserPlatform = navigator.platform;
-
-    if (bruteChecked) {
-      var postData = {
-        wff: wff,
-        numAtomics: _booleanLogic2.default._atomics(wff).length,
-        algorithm: 'brute',
-        isSat: Boolean(bruteModel),
-        bruteModel: bruteModel ? bruteModel : null,
-        bruteTestDuration: bruteTestDuration,
-        browser: {
-          browserName: browserName,
-          browserEngine: browserEngine,
-          browserVersion1: browserVersion1,
-          browserVersion2: browserVersion2,
-          browserPlatform: browserPlatform
-        }
-      };
-      var newPostKey = _firebase2.default.database().ref().child('benchmarks').push().key;
-      var updates = {};
-      updates['/benchmarks/' + newPostKey] = postData;
-      _firebase2.default.database().ref().update(updates).then(function () {
-        if (shortChecked) {
-          postData = {
-            wff: wff,
-            numAtomics: _booleanLogic2.default._atomics(wff).length,
-            algorithm: 'short',
-            isSat: Boolean(shortModel),
-            shortModel: shortModel ? shortModel : null,
-            bruteTestDuration: bruteTestDuration,
-            browser: {
-              browserName: browserName,
-              browserEngine: browserEngine,
-              browserVersion1: browserVersion1,
-              browserVersion2: browserVersion2,
-              browserPlatform: browserPlatform
-            }
-          };
-          newPostKey = _firebase2.default.database().ref().child('benchmarks').push().key;
-          updates = {};
-          updates['/benchmarks/' + newPostKey] = postData;
-          _firebase2.default.database().ref().update(updates).then(function () {
-            generateButton.disabled = false;
-            submitButton.disabled = false;
-            wffTextarea.disabled = false;
-            wffLengthInput.disabled = false;
-
-            var browserInfo = '\n                  <p>Browser name: ' + browserName + '</p>\n                  <p>Browser engine: ' + browserEngine + '</p>\n                  <p>Browser version 1a: ' + browserVersion1 + '</p>\n                  <p>Browser version 1b: ' + browserVersion2 + '</p>\n                  <p>Browser platform: ' + browserPlatform + '</p>\n                ';
-
-            if (bruteModel) {
-              var resultString = '';
-              for (var key in bruteModel) {
-                resultString = resultString + '<br />&nbsp;&nbsp;' + key + ': ' + bruteModel[key];
-              }
-              resultDiv.innerHTML = '\n                    <p>The formula is satisfiable.</p>\n                    <p>The first model found was:</p>\n                    <p>{' + resultString + '<br />}</p>\n                    <p>It took ' + bruteTestDuration + ' milliseconds to find this model.</p>\n                    ' + browserInfo + '\n                  ';
-            } else {
-              resultDiv.innerHTML = '\n                    <p>The formula isn\'t satisfiable</p>\n                    <p>It took ' + bruteTestDuration + ' milliseconds to arrive at this.</p>\n                    ' + browserInfo + '\n                  ';
-            }
-          });
-        } else {
-          generateButton.disabled = false;
-          submitButton.disabled = false;
-          wffTextarea.disabled = false;
-          wffLengthInput.disabled = false;
-
-          var browserInfo = '\n                  <p>Browser name: ' + browserName + '</p>\n                  <p>Browser engine: ' + browserEngine + '</p>\n                  <p>Browser version 1a: ' + browserVersion1 + '</p>\n                  <p>Browser version 1b: ' + browserVersion2 + '</p>\n                  <p>Browser platform: ' + browserPlatform + '</p>\n                ';
-
-          if (bruteModel) {
-            var resultString = '';
-            for (var key in bruteModel) {
-              resultString = resultString + '<br />&nbsp;&nbsp;' + key + ': ' + bruteModel[key];
-            }
-            resultDiv.innerHTML = '\n                    <p>The formula is satisfiable.</p>\n                    <p>The first model found was:</p>\n                    <p>{' + resultString + '<br />}</p>\n                    <p>It took ' + bruteTestDuration + ' milliseconds to find this model.</p>\n                    ' + browserInfo + '\n                  ';
-          } else {
-            resultDiv.innerHTML = '\n                    <p>The formula isn\'t satisfiable</p>\n                    <p>It took ' + bruteTestDuration + ' milliseconds to arrive at this.</p>\n                    ' + browserInfo + '\n                  ';
-          }
-        }
-      });
-    } else if (shortChecked) {
+    };
+    var newPostKey = _firebase2.default.database().ref().child('benchmarks').push().key;
+    var updates = {};
+    updates['/benchmarks/' + newPostKey] = postData;
+    _firebase2.default.database().ref().update(updates).then(function () {
       if (shortChecked) {
-        var _postData = {
+        if (bruteModel) {
+          var resultString = '';
+          for (var key in bruteModel) {
+            resultString = resultString + '<br />&nbsp;&nbsp;' + key + ': ' + bruteModel[key];
+          }
+          resultDiv.innerHTML = '\n              <h1>Brute force</h1>\n              <p>The formula is satisfiable.</p>\n              <p>The first model found was:</p>\n              <p>{' + resultString + '<br />}</p>\n              <p>It took ' + bruteTestDuration + ' milliseconds to find this model.</p>\n            ';
+        } else {
+          resultDiv.innerHTML = '\n              <p>The formula isn\'t satisfiable</p>\n              <p>It took ' + bruteTestDuration + ' milliseconds to arrive at this.</p>\n            ';
+        }
+
+        postData = {
           wff: wff,
           numAtomics: _booleanLogic2.default._atomics(wff).length,
           algorithm: 'short',
           isSat: Boolean(shortModel),
           shortModel: shortModel ? shortModel : null,
-          shortTestDuration: shortTestDuration,
+          bruteTestDuration: bruteTestDuration,
           browser: {
             browserName: browserName,
             browserEngine: browserEngine,
@@ -27822,35 +27946,79 @@ var benchmark = exports.benchmark = function benchmark(wff, ref) {
             browserPlatform: browserPlatform
           }
         };
-        var _newPostKey = _firebase2.default.database().ref().child('benchmarks').push().key;
-        var _updates = {};
-        _updates['/benchmarks/' + _newPostKey] = _postData;
-        _firebase2.default.database().ref().update(_updates).then(function () {
+        newPostKey = _firebase2.default.database().ref().child('benchmarks').push().key;
+        updates = {};
+        updates['/benchmarks/' + newPostKey] = postData;
+        _firebase2.default.database().ref().update(updates).then(function () {
           generateButton.disabled = false;
           submitButton.disabled = false;
           wffTextarea.disabled = false;
           wffLengthInput.disabled = false;
 
-          var browserInfo = '\n                  <p>Browser name: ' + browserName + '</p>\n                  <p>Browser engine: ' + browserEngine + '</p>\n                  <p>Browser version 1a: ' + browserVersion1 + '</p>\n                  <p>Browser version 1b: ' + browserVersion2 + '</p>\n                  <p>Browser platform: ' + browserPlatform + '</p>\n                ';
-
           if (shortModel) {
-            var resultString = '';
-            for (var key in shortModel) {
-              resultString = resultString + '<br />&nbsp;&nbsp;' + key + ': ' + shortModel[key];
+            var _resultString = '';
+            for (var _key in shortModel) {
+              _resultString = _resultString + '<br />&nbsp;&nbsp;' + _key + ': ' + shortModel[_key];
             }
-            resultDiv.innerHTML = '\n                    <p>The formula is satisfiable.</p>\n                    <p>The first model found was:</p>\n                    <p>{' + resultString + '<br />}</p>\n                    <p>It took ' + shortTestDuration + ' milliseconds to find this model using the short truth table algorithm.</p>\n                    ' + browserInfo + '\n                  ';
+            resultDiv.innerHTML = '\n                  ' + resultDiv.innerHTML + '\n                  <h1>Short truth tables</h1>\n                  <p>The formula is satisfiable.</p>\n                  <p>The model found was:</p>\n                  <p>{' + _resultString + '<br />}</p>\n                  <p>It took ' + shortTestDuration + ' milliseconds to find this model using the short truth table algorithm.</p>\n                ';
           } else {
-            resultDiv.innerHTML = '\n                    <p>The formula isn\'t satisfiable</p>\n                    <p>It took ' + shortTestDuration + ' milliseconds to arrive at this using the short truth table algorithm.</p>\n                    ' + browserInfo + '\n                  ';
+            resultDiv.innerHTML = '\n                  <p>The formula isn\'t satisfiable</p>\n                  <p>It took ' + shortTestDuration + ' milliseconds to arrive at this using the short truth table algorithm.</p>\n                ';
           }
         });
+      } else {
+        generateButton.disabled = false;
+        submitButton.disabled = false;
+        wffTextarea.disabled = false;
+        wffLengthInput.disabled = false;
+
+        if (bruteModel) {
+          var _resultString2 = '';
+          for (var _key2 in bruteModel) {
+            _resultString2 = _resultString2 + '<br />&nbsp;&nbsp;' + _key2 + ': ' + bruteModel[_key2];
+          }
+          resultDiv.innerHTML = '\n              <h1>Brute force</h1>\n              <p>The formula is satisfiable.</p>\n              <p>The first model found was:</p>\n              <p>{' + _resultString2 + '<br />}</p>\n              <p>It took ' + bruteTestDuration + ' milliseconds to find this model.</p>\n            ';
+        } else {
+          resultDiv.innerHTML = '\n              <p>The formula isn\'t satisfiable</p>\n              <p>It took ' + bruteTestDuration + ' milliseconds to arrive at this.</p>\n            ';
+        }
       }
+    });
+  } else if (shortChecked) {
+    if (shortChecked) {
+      var _postData = {
+        wff: wff,
+        numAtomics: _booleanLogic2.default._atomics(wff).length,
+        algorithm: 'short',
+        isSat: Boolean(shortModel),
+        shortModel: shortModel ? shortModel : null,
+        shortTestDuration: shortTestDuration,
+        browser: {
+          browserName: browserName,
+          browserEngine: browserEngine,
+          browserVersion1: browserVersion1,
+          browserVersion2: browserVersion2,
+          browserPlatform: browserPlatform
+        }
+      };
+      var _newPostKey = _firebase2.default.database().ref().child('benchmarks').push().key;
+      var _updates = {};
+      _updates['/benchmarks/' + _newPostKey] = _postData;
+      _firebase2.default.database().ref().update(_updates).then(function () {
+        generateButton.disabled = false;
+        submitButton.disabled = false;
+        wffTextarea.disabled = false;
+        wffLengthInput.disabled = false;
+
+        if (shortModel) {
+          var resultString = '';
+          for (var key in shortModel) {
+            resultString = resultString + '<br />&nbsp;&nbsp;' + key + ': ' + shortModel[key];
+          }
+          resultDiv.innerHTML = '\n                    <h1>Short truth tables</h1>\n                    <p>The formula is satisfiable.</p>\n                    <p>The model found was:</p>\n                    <p>{' + resultString + '<br />}</p>\n                    <p>It took ' + shortTestDuration + ' milliseconds to find this model using the short truth table algorithm.</p>\n                  ';
+        } else {
+          resultDiv.innerHTML = '\n                    <p>The formula isn\'t satisfiable</p>\n                    <p>It took ' + shortTestDuration + ' milliseconds to arrive at this using the short truth table algorithm.</p>\n                  ';
+        }
+      });
     }
-  } catch (error) {
-    resultDiv.innerHTML = '<p>' + error + '</p>';
-    generateButton.disabled = false;
-    submitButton.disabled = false;
-    wffTextarea.disabled = false;
-    wffLengthInput.disabled = false;
   }
 };
 
