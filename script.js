@@ -15280,6 +15280,12 @@ document.addEventListener('DOMContentLoaded', function () {
   //   console.log(snapshot.val().benchmarks);
   // });
 
+  var worker = void 0;
+
+  if (window.Worker) {
+    worker = new Worker('./worker.js');
+  }
+
   var generateButton = document.getElementById('generateButton');
   var submitButton = document.getElementById('submitButton');
   var wffTextarea = document.getElementById('wffTextarea');
@@ -15326,7 +15332,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   submitButton.addEventListener('click', function (e) {
     e.preventDefault();
-    (0, _benchmark.benchmark)(parseFromSym(wffTextarea.value), ref);
+    (0, _benchmark.benchmark)(parseFromSym(wffTextarea.value), ref, worker);
   });
 
   if (wffTextarea.addEventListener) {
@@ -15338,6 +15344,14 @@ document.addEventListener('DOMContentLoaded', function () {
       handleInputChange(e, resultDiv);
     });
   }
+
+  wffLengthInput.addEventListener('input', function () {
+    if (parseInt(wffLengthInput.value) > 0) {
+      generateButton.disabled = false;
+    } else {
+      generateButton.disabled = true;
+    }
+  });
 });
 
 var toSymDict = {
@@ -27849,19 +27863,17 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.benchmark = undefined;
 
-var _firebase = __webpack_require__(30);
-
-var _firebase2 = _interopRequireDefault(_firebase);
-
 var _booleanLogic = __webpack_require__(85);
 
 var _booleanLogic2 = _interopRequireDefault(_booleanLogic);
 
-var _util = __webpack_require__(86);
+var _firebase = __webpack_require__(30);
+
+var _firebase2 = _interopRequireDefault(_firebase);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var benchmark = exports.benchmark = function benchmark(wff, ref) {
+var benchmark = exports.benchmark = function benchmark(wff, ref, worker) {
   var generateButton = document.getElementById('generateButton');
   var submitButton = document.getElementById('submitButton');
   var wffTextarea = document.getElementById('wffTextarea');
@@ -27874,152 +27886,84 @@ var benchmark = exports.benchmark = function benchmark(wff, ref) {
   wffTextarea.disabled = true;
   wffLengthInput.disabled = true;
 
-  var bruteModel = void 0;
-  var bruteTestDuration = void 0;
-  var shortModel = void 0;
-  var shortTestDuration = void 0;
-
-  if (bruteChecked) {
-    var beforeTime = new Date();
-    bruteModel = (0, _booleanLogic.isSat)(wff, true, true);
-    var afterTime = new Date();
-    bruteTestDuration = afterTime.getTime() - beforeTime.getTime();
+  var beforeTime = new Date();
+  if (worker) {
+    worker.postMessage({ wff: wff, bruteChecked: bruteChecked, shortChecked: shortChecked });
   }
 
-  if (shortChecked) {
-    var _beforeTime = new Date();
-    shortModel = (0, _booleanLogic.isSat)(wff, true, false);
-    var _afterTime = new Date();
-    shortTestDuration = _afterTime.getTime() - _beforeTime.getTime();
-  }
+  worker.onmessage = function (e) {
+    var postData = e.data;
 
-  var browserName = navigator.appName;
-  var browserEngine = navigator.product;
-  var browserVersion1 = navigator.appVersion;
-  var browserVersion2 = navigator.userAgent;
-  var browserOnline = navigator.onLine;
-  var browserPlatform = navigator.platform;
-
-  if (bruteChecked) {
-    var postData = {
-      wff: wff,
-      numAtomics: _booleanLogic2.default._atomics(wff).length,
-      algorithm: 'brute',
-      isSat: Boolean(bruteModel),
-      bruteModel: bruteModel ? bruteModel : null,
-      bruteTestDuration: bruteTestDuration,
-      browser: {
-        browserName: browserName,
-        browserEngine: browserEngine,
-        browserVersion1: browserVersion1,
-        browserVersion2: browserVersion2,
-        browserPlatform: browserPlatform
-      }
-    };
-    var newPostKey = _firebase2.default.database().ref().child('benchmarks').push().key;
-    var updates = {};
-    updates['/benchmarks/' + newPostKey] = postData;
-    _firebase2.default.database().ref().update(updates).then(function () {
-      if (shortChecked) {
-        if (bruteModel) {
-          var resultString = '';
-          for (var key in bruteModel) {
-            resultString = resultString + '<br />&nbsp;&nbsp;' + key + ': ' + bruteModel[key];
-          }
-          resultDiv.innerHTML = '\n              <h1>Brute force</h1>\n              <p>The formula is satisfiable.</p>\n              <p>The first model found was:</p>\n              <p>{' + resultString + '<br />}</p>\n              <p>It took ' + bruteTestDuration + ' milliseconds to find this model.</p>\n            ';
-        } else {
-          resultDiv.innerHTML = '\n              <p>The formula isn\'t satisfiable</p>\n              <p>It took ' + bruteTestDuration + ' milliseconds to arrive at this.</p>\n            ';
-        }
-
-        postData = {
-          wff: wff,
-          numAtomics: _booleanLogic2.default._atomics(wff).length,
-          algorithm: 'short',
-          isSat: Boolean(shortModel),
-          shortModel: shortModel ? shortModel : null,
-          bruteTestDuration: bruteTestDuration,
-          browser: {
-            browserName: browserName,
-            browserEngine: browserEngine,
-            browserVersion1: browserVersion1,
-            browserVersion2: browserVersion2,
-            browserPlatform: browserPlatform
-          }
-        };
-        newPostKey = _firebase2.default.database().ref().child('benchmarks').push().key;
-        updates = {};
-        updates['/benchmarks/' + newPostKey] = postData;
-        _firebase2.default.database().ref().update(updates).then(function () {
-          generateButton.disabled = false;
-          submitButton.disabled = false;
-          wffTextarea.disabled = false;
-          wffLengthInput.disabled = false;
-
-          if (shortModel) {
-            var _resultString = '';
-            for (var _key in shortModel) {
-              _resultString = _resultString + '<br />&nbsp;&nbsp;' + _key + ': ' + shortModel[_key];
+    if (bruteChecked) {
+      var newPostKey = _firebase2.default.database().ref().child('benchmarks').push().key;
+      var updates = {};
+      updates['/benchmarks/' + newPostKey] = postData.brute;
+      _firebase2.default.database().ref().update(updates).then(function () {
+        if (shortChecked) {
+          if (postData.brute.bruteModel) {
+            var resultString = '';
+            for (var key in postData.brute.bruteModel) {
+              resultString = resultString + '<br />&nbsp;&nbsp;' + key + ': ' + postData.brute.bruteModel[key];
             }
-            resultDiv.innerHTML = '\n                  ' + resultDiv.innerHTML + '\n                  <h1>Short truth tables</h1>\n                  <p>The formula is satisfiable.</p>\n                  <p>The model found was:</p>\n                  <p>{' + _resultString + '<br />}</p>\n                  <p>It took ' + shortTestDuration + ' milliseconds to find this model using the short truth table algorithm.</p>\n                ';
+            resultDiv.innerHTML = '\n              <h2>Brute force</h2>\n              <p>The formula is satisfiable.</p>\n              <p>The first model found was:</p>\n              <p>{' + resultString + '<br />}</p>\n              <p>It took ' + postData.brute.testDuration + ' milliseconds to find this model.</p>\n            ';
           } else {
-            resultDiv.innerHTML = '\n                  <p>The formula isn\'t satisfiable</p>\n                  <p>It took ' + shortTestDuration + ' milliseconds to arrive at this using the short truth table algorithm.</p>\n                ';
+            resultDiv.innerHTML = '\n              <p>The formula isn\'t satisfiable</p>\n              <p>It took ' + postData.brute.testDuration + ' milliseconds to arrive at this.</p>\n            ';
           }
-        });
-      } else {
-        generateButton.disabled = false;
-        submitButton.disabled = false;
-        wffTextarea.disabled = false;
-        wffLengthInput.disabled = false;
 
-        if (bruteModel) {
-          var _resultString2 = '';
-          for (var _key2 in bruteModel) {
-            _resultString2 = _resultString2 + '<br />&nbsp;&nbsp;' + _key2 + ': ' + bruteModel[_key2];
-          }
-          resultDiv.innerHTML = '\n              <h1>Brute force</h1>\n              <p>The formula is satisfiable.</p>\n              <p>The first model found was:</p>\n              <p>{' + _resultString2 + '<br />}</p>\n              <p>It took ' + bruteTestDuration + ' milliseconds to find this model.</p>\n            ';
-        } else {
-          resultDiv.innerHTML = '\n              <p>The formula isn\'t satisfiable</p>\n              <p>It took ' + bruteTestDuration + ' milliseconds to arrive at this.</p>\n            ';
-        }
-      }
-    });
-  } else if (shortChecked) {
-    if (shortChecked) {
-      var _postData = {
-        wff: wff,
-        numAtomics: _booleanLogic2.default._atomics(wff).length,
-        algorithm: 'short',
-        isSat: Boolean(shortModel),
-        shortModel: shortModel ? shortModel : null,
-        shortTestDuration: shortTestDuration,
-        browser: {
-          browserName: browserName,
-          browserEngine: browserEngine,
-          browserVersion1: browserVersion1,
-          browserVersion2: browserVersion2,
-          browserPlatform: browserPlatform
-        }
-      };
-      var _newPostKey = _firebase2.default.database().ref().child('benchmarks').push().key;
-      var _updates = {};
-      _updates['/benchmarks/' + _newPostKey] = _postData;
-      _firebase2.default.database().ref().update(_updates).then(function () {
-        generateButton.disabled = false;
-        submitButton.disabled = false;
-        wffTextarea.disabled = false;
-        wffLengthInput.disabled = false;
+          newPostKey = _firebase2.default.database().ref().child('benchmarks').push().key;
+          updates = {};
+          updates['/benchmarks/' + newPostKey] = postData.short;
+          _firebase2.default.database().ref().update(updates).then(function () {
+            generateButton.disabled = false;
+            submitButton.disabled = false;
+            wffTextarea.disabled = false;
+            wffLengthInput.disabled = false;
 
-        if (shortModel) {
-          var resultString = '';
-          for (var key in shortModel) {
-            resultString = resultString + '<br />&nbsp;&nbsp;' + key + ': ' + shortModel[key];
-          }
-          resultDiv.innerHTML = '\n                    <h1>Short truth tables</h1>\n                    <p>The formula is satisfiable.</p>\n                    <p>The model found was:</p>\n                    <p>{' + resultString + '<br />}</p>\n                    <p>It took ' + shortTestDuration + ' milliseconds to find this model using the short truth table algorithm.</p>\n                  ';
+            if (postData.short.shortModel) {
+              var _resultString = '';
+              for (var _key in postData.short.shortModel) {
+                _resultString = _resultString + '<br />&nbsp;&nbsp;' + _key + ': ' + postData.short.shortModel[_key];
+              }
+              resultDiv.innerHTML = '\n                  ' + resultDiv.innerHTML + '\n                  <h2>Short truth tables</h2>\n                  <p>The formula is satisfiable.</p>\n                  <p>The model found was:</p>\n                  <p>{' + _resultString + '<br />}</p>\n                  <p>It took ' + postData.short.testDuration + ' milliseconds to find this model.</p>\n                ';
+            } else {
+              resultDiv.innerHTML = '\n                  <p>The formula isn\'t satisfiable</p>\n                  <p>It took ' + postData.short.testDuration + ' milliseconds to arrive at this.</p>\n                ';
+            }
+          });
         } else {
-          resultDiv.innerHTML = '\n                    <p>The formula isn\'t satisfiable</p>\n                    <p>It took ' + shortTestDuration + ' milliseconds to arrive at this using the short truth table algorithm.</p>\n                  ';
+          submitButton.disabled = false;
+
+          if (postData.brute.bruteModel) {
+            var _resultString2 = '';
+            for (var _key2 in postData.brute.bruteModel) {
+              _resultString2 = _resultString2 + '<br />&nbsp;&nbsp;' + _key2 + ': ' + postData.brute.bruteModel[_key2];
+            }
+            resultDiv.innerHTML = '\n              <h2>Brute force</h2>\n              <p>The formula is satisfiable.</p>\n              <p>The first model found was:</p>\n              <p>{' + _resultString2 + '<br />}</p>\n              <p>It took ' + postData.brute.testDuration + ' milliseconds to find this model.</p>\n            ';
+          } else {
+            resultDiv.innerHTML = '\n              <p>The formula isn\'t satisfiable</p>\n              <p>It took ' + postData.brute.testDuration + ' milliseconds to arrive at this.</p>\n            ';
+          }
         }
       });
+    } else if (shortChecked) {
+      if (shortChecked) {
+        var _newPostKey = _firebase2.default.database().ref().child('benchmarks').push().key;
+        var _updates = {};
+        _updates['/benchmarks/' + _newPostKey] = postData.short;
+        _firebase2.default.database().ref().update(_updates).then(function () {
+          submitButton.disabled = false;
+
+          if (postData.short.shortModel) {
+            var resultString = '';
+            for (var key in postData.short.shortModel) {
+              resultString = resultString + '<br />&nbsp;&nbsp;' + key + ': ' + postData.short.shortModel[key];
+            }
+            resultDiv.innerHTML = '\n                    <h2>Short truth tables</h2>\n                    <p>The formula is satisfiable.</p>\n                    <p>The model found was:</p>\n                    <p>{' + resultString + '<br />}</p>\n                    <p>It took ' + postData.short.testDuration + ' milliseconds to find this model.</p>\n                  ';
+          } else {
+            resultDiv.innerHTML = '\n                    <p>The formula isn\'t satisfiable</p>\n                    <p>It took ' + postData.short.testDuration + ' milliseconds to arrive at this.</p>\n                  ';
+          }
+        });
+      }
     }
-  }
+  };
 };
 
 var autoGenerateBenchmarks = function autoGenerateBenchmarks() {

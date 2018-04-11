@@ -1,8 +1,7 @@
+import Logic from 'boolean-logic';
 import firebase from 'firebase';
-import Logic, { isSat } from 'boolean-logic';
-import { nth } from './util';
 
-export const benchmark = (wff, ref) => {
+export const benchmark = (wff, ref, worker) => {
   const generateButton = document.getElementById('generateButton');
   const submitButton = document.getElementById('submitButton');
   const wffTextarea = document.getElementById('wffTextarea');
@@ -15,221 +14,169 @@ export const benchmark = (wff, ref) => {
   wffTextarea.disabled = true;
   wffLengthInput.disabled = true;
 
-  let bruteModel;
-  let bruteTestDuration;
-  let shortModel;
-  let shortTestDuration;
-
-  if (bruteChecked) {
-    const beforeTime = new Date();
-    bruteModel = isSat(wff, true, true);
-    const afterTime = new Date();
-    bruteTestDuration = afterTime.getTime() - beforeTime.getTime();
+  const beforeTime = new Date();
+  if (worker) {
+    worker.postMessage({ wff, bruteChecked, shortChecked });
   }
 
-  if (shortChecked) {
-    const beforeTime = new Date();
-    shortModel = isSat(wff, true, false);
-    const afterTime = new Date();
-    shortTestDuration = afterTime.getTime() - beforeTime.getTime();
-  }
+  worker.onmessage = e => {
+    const postData = e.data;
 
-  const browserName = navigator.appName;
-  const browserEngine = navigator.product;
-  const browserVersion1 = navigator.appVersion;
-  const browserVersion2 = navigator.userAgent;
-  const browserOnline = navigator.onLine;
-  const browserPlatform = navigator.platform;
-
-  if (bruteChecked) {
-    let postData = {
-      wff,
-      numAtomics: Logic._atomics(wff).length,
-      algorithm: 'brute',
-      isSat: Boolean(bruteModel),
-      bruteModel: bruteModel ? bruteModel : null,
-      bruteTestDuration,
-      browser: {
-        browserName,
-        browserEngine,
-        browserVersion1,
-        browserVersion2,
-        browserPlatform,
-      },
-    };
-    let newPostKey = firebase
-      .database()
-      .ref()
-      .child('benchmarks')
-      .push().key;
-    let updates = {};
-    updates['/benchmarks/' + newPostKey] = postData;
-    firebase
-      .database()
-      .ref()
-      .update(updates)
-      .then(() => {
-        if (shortChecked) {
-          if (bruteModel) {
-            let resultString = '';
-            for (let key in bruteModel) {
-              resultString = `${resultString}<br />&nbsp;&nbsp;${key}: ${
-                bruteModel[key]
-              }`;
-            }
-            resultDiv.innerHTML = `
-              <h1>Brute force</h1>
-              <p>The formula is satisfiable.</p>
-              <p>The first model found was:</p>
-              <p>{${resultString}<br />}</p>
-              <p>It took ${bruteTestDuration} milliseconds to find this model.</p>
-            `;
-          } else {
-            resultDiv.innerHTML = `
-              <p>The formula isn't satisfiable</p>
-              <p>It took ${bruteTestDuration} milliseconds to arrive at this.</p>
-            `;
-          }
-
-          postData = {
-            wff,
-            numAtomics: Logic._atomics(wff).length,
-            algorithm: 'short',
-            isSat: Boolean(shortModel),
-            shortModel: shortModel ? shortModel : null,
-            bruteTestDuration,
-            browser: {
-              browserName,
-              browserEngine,
-              browserVersion1,
-              browserVersion2,
-              browserPlatform,
-            },
-          };
-          newPostKey = firebase
-            .database()
-            .ref()
-            .child('benchmarks')
-            .push().key;
-          updates = {};
-          updates['/benchmarks/' + newPostKey] = postData;
-          firebase
-            .database()
-            .ref()
-            .update(updates)
-            .then(() => {
-              generateButton.disabled = false;
-              submitButton.disabled = false;
-              wffTextarea.disabled = false;
-              wffLengthInput.disabled = false;
-
-              if (shortModel) {
-                let resultString = '';
-                for (let key in shortModel) {
-                  resultString = `${resultString}<br />&nbsp;&nbsp;${key}: ${
-                    shortModel[key]
-                  }`;
-                }
-                resultDiv.innerHTML = `
-                  ${resultDiv.innerHTML}
-                  <h1>Short truth tables</h1>
-                  <p>The formula is satisfiable.</p>
-                  <p>The model found was:</p>
-                  <p>{${resultString}<br />}</p>
-                  <p>It took ${shortTestDuration} milliseconds to find this model using the short truth table algorithm.</p>
-                `;
-              } else {
-                resultDiv.innerHTML = `
-                  <p>The formula isn't satisfiable</p>
-                  <p>It took ${shortTestDuration} milliseconds to arrive at this using the short truth table algorithm.</p>
-                `;
-              }
-            });
-        } else {
-          generateButton.disabled = false;
-          submitButton.disabled = false;
-          wffTextarea.disabled = false;
-          wffLengthInput.disabled = false;
-
-          if (bruteModel) {
-            let resultString = '';
-            for (let key in bruteModel) {
-              resultString = `${resultString}<br />&nbsp;&nbsp;${key}: ${
-                bruteModel[key]
-              }`;
-            }
-            resultDiv.innerHTML = `
-              <h1>Brute force</h1>
-              <p>The formula is satisfiable.</p>
-              <p>The first model found was:</p>
-              <p>{${resultString}<br />}</p>
-              <p>It took ${bruteTestDuration} milliseconds to find this model.</p>
-            `;
-          } else {
-            resultDiv.innerHTML = `
-              <p>The formula isn't satisfiable</p>
-              <p>It took ${bruteTestDuration} milliseconds to arrive at this.</p>
-            `;
-          }
-        }
-      });
-  } else if (shortChecked) {
-    if (shortChecked) {
-      let postData = {
-        wff,
-        numAtomics: Logic._atomics(wff).length,
-        algorithm: 'short',
-        isSat: Boolean(shortModel),
-        shortModel: shortModel ? shortModel : null,
-        shortTestDuration,
-        browser: {
-          browserName,
-          browserEngine,
-          browserVersion1,
-          browserVersion2,
-          browserPlatform,
-        },
-      };
+    if (bruteChecked) {
       let newPostKey = firebase
         .database()
         .ref()
         .child('benchmarks')
         .push().key;
       let updates = {};
-      updates['/benchmarks/' + newPostKey] = postData;
+      updates['/benchmarks/' + newPostKey] = postData.brute;
       firebase
         .database()
         .ref()
         .update(updates)
         .then(() => {
-          generateButton.disabled = false;
-          submitButton.disabled = false;
-          wffTextarea.disabled = false;
-          wffLengthInput.disabled = false;
-
-          if (shortModel) {
-            let resultString = '';
-            for (let key in shortModel) {
-              resultString = `${resultString}<br />&nbsp;&nbsp;${key}: ${
-                shortModel[key]
-              }`;
+          if (shortChecked) {
+            if (postData.brute.bruteModel) {
+              let resultString = '';
+              for (let key in postData.brute.bruteModel) {
+                resultString = `${resultString}<br />&nbsp;&nbsp;${key}: ${
+                  postData.brute.bruteModel[key]
+                }`;
+              }
+              resultDiv.innerHTML = `
+              <h2>Brute force</h2>
+              <p>The formula is satisfiable.</p>
+              <p>The first model found was:</p>
+              <p>{${resultString}<br />}</p>
+              <p>It took ${
+                postData.brute.testDuration
+              } milliseconds to find this model.</p>
+            `;
+            } else {
+              resultDiv.innerHTML = `
+              <p>The formula isn't satisfiable</p>
+              <p>It took ${
+                postData.brute.testDuration
+              } milliseconds to arrive at this.</p>
+            `;
             }
-            resultDiv.innerHTML = `
-                    <h1>Short truth tables</h1>
+
+            newPostKey = firebase
+              .database()
+              .ref()
+              .child('benchmarks')
+              .push().key;
+            updates = {};
+            updates['/benchmarks/' + newPostKey] = postData.short;
+            firebase
+              .database()
+              .ref()
+              .update(updates)
+              .then(() => {
+                generateButton.disabled = false;
+                submitButton.disabled = false;
+                wffTextarea.disabled = false;
+                wffLengthInput.disabled = false;
+
+                if (postData.short.shortModel) {
+                  let resultString = '';
+                  for (let key in postData.short.shortModel) {
+                    resultString = `${resultString}<br />&nbsp;&nbsp;${key}: ${
+                      postData.short.shortModel[key]
+                    }`;
+                  }
+                  resultDiv.innerHTML = `
+                  ${resultDiv.innerHTML}
+                  <h2>Short truth tables</h2>
+                  <p>The formula is satisfiable.</p>
+                  <p>The model found was:</p>
+                  <p>{${resultString}<br />}</p>
+                  <p>It took ${
+                    postData.short.testDuration
+                  } milliseconds to find this model.</p>
+                `;
+                } else {
+                  resultDiv.innerHTML = `
+                  <p>The formula isn't satisfiable</p>
+                  <p>It took ${
+                    postData.short.testDuration
+                  } milliseconds to arrive at this.</p>
+                `;
+                }
+              });
+          } else {
+            submitButton.disabled = false;
+
+            if (postData.brute.bruteModel) {
+              let resultString = '';
+              for (let key in postData.brute.bruteModel) {
+                resultString = `${resultString}<br />&nbsp;&nbsp;${key}: ${
+                  postData.brute.bruteModel[key]
+                }`;
+              }
+              resultDiv.innerHTML = `
+              <h2>Brute force</h2>
+              <p>The formula is satisfiable.</p>
+              <p>The first model found was:</p>
+              <p>{${resultString}<br />}</p>
+              <p>It took ${
+                postData.brute.testDuration
+              } milliseconds to find this model.</p>
+            `;
+            } else {
+              resultDiv.innerHTML = `
+              <p>The formula isn't satisfiable</p>
+              <p>It took ${
+                postData.brute.testDuration
+              } milliseconds to arrive at this.</p>
+            `;
+            }
+          }
+        });
+    } else if (shortChecked) {
+      if (shortChecked) {
+        let newPostKey = firebase
+          .database()
+          .ref()
+          .child('benchmarks')
+          .push().key;
+        let updates = {};
+        updates['/benchmarks/' + newPostKey] = postData.short;
+        firebase
+          .database()
+          .ref()
+          .update(updates)
+          .then(() => {
+            submitButton.disabled = false;
+
+            if (postData.short.shortModel) {
+              let resultString = '';
+              for (let key in postData.short.shortModel) {
+                resultString = `${resultString}<br />&nbsp;&nbsp;${key}: ${
+                  postData.short.shortModel[key]
+                }`;
+              }
+              resultDiv.innerHTML = `
+                    <h2>Short truth tables</h2>
                     <p>The formula is satisfiable.</p>
                     <p>The model found was:</p>
                     <p>{${resultString}<br />}</p>
-                    <p>It took ${shortTestDuration} milliseconds to find this model using the short truth table algorithm.</p>
+                    <p>It took ${
+                      postData.short.testDuration
+                    } milliseconds to find this model.</p>
                   `;
-          } else {
-            resultDiv.innerHTML = `
+            } else {
+              resultDiv.innerHTML = `
                     <p>The formula isn't satisfiable</p>
-                    <p>It took ${shortTestDuration} milliseconds to arrive at this using the short truth table algorithm.</p>
+                    <p>It took ${
+                      postData.short.testDuration
+                    } milliseconds to arrive at this.</p>
                   `;
-          }
-        });
+            }
+          });
+      }
     }
-  }
+  };
 };
 
 const autoGenerateBenchmarks = () => {

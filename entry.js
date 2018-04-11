@@ -10,6 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
   //   console.log(snapshot.val().benchmarks);
   // });
 
+  let worker;
+
+  if (window.Worker) {
+    worker = new Worker('./worker.js');
+  }
+
   const generateButton = document.getElementById('generateButton');
   const submitButton = document.getElementById('submitButton');
   const wffTextarea = document.getElementById('wffTextarea');
@@ -59,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   submitButton.addEventListener('click', e => {
     e.preventDefault();
-    benchmark(parseFromSym(wffTextarea.value), ref);
+    benchmark(parseFromSym(wffTextarea.value), ref, worker);
   });
 
   if (wffTextarea.addEventListener) {
@@ -75,6 +81,14 @@ document.addEventListener('DOMContentLoaded', () => {
       handleInputChange(e, resultDiv);
     });
   }
+
+  wffLengthInput.addEventListener('input', () => {
+    if (parseInt(wffLengthInput.value) > 0) {
+      generateButton.disabled = false;
+    } else {
+      generateButton.disabled = true;
+    }
+  });
 });
 
 const toSymDict = {
