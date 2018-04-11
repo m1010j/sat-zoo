@@ -15,7 +15,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const wffTextarea = document.getElementById('wffTextarea');
   const wffLengthInput = document.getElementById('wffLength');
   const resultDiv = document.getElementById('result');
-  const keyboard = Array.from(document.querySelector('.keyboard').children);
+  const atoms = Array.from(document.querySelector('.atoms').children);
+  const rest = Array.from(document.querySelector('.rest').children);
+  const keyboard = atoms.concat(rest);
   const bruteButton = document.getElementById('brute-force');
   const shortButton = document.getElementById('short-tables');
 
@@ -40,13 +42,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   keyboard.forEach(key => {
     key.addEventListener('click', e => {
-      const cursorPosition = wffTextarea.selectionStart;
+      const selectionStart = wffTextarea.selectionStart;
       const wffArray = wffTextarea.value.split('');
-      wffArray.splice(cursorPosition, 0, toSymDict[key.innerText]);
+      wffArray.splice(selectionStart, 0, toSymDict[key.innerText]);
       wffTextarea.value = wffArray.join('');
       wffTextarea.focus();
-      wffTextarea.selectionStart = cursorPosition + 1;
-      wffTextarea.selectionEnd = cursorPosition + 1;
+      wffTextarea.selectionStart = selectionStart + 1;
+      wffTextarea.selectionEnd = selectionStart + 1;
     });
   });
 
@@ -80,6 +82,9 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       false
     );
+    wffTextarea.addEventListener('paste', e => {
+      handleInputChange(e, resultDiv);
+    });
   } else if (wffTextarea.attachEvent) {
     wffTextarea.attachEvent('onpropertychange', e => {
       handleInputChange(e, resultDiv);
@@ -173,23 +178,90 @@ const parseFromSym = str => {
   return parsed;
 };
 
+const symStrIsValid = str => {
+  for (let ch of str) {
+    if (!fromSymDict[ch]) {
+      return false;
+    }
+  }
+  return true;
+};
+
 const handleInputChange = (e, resultDiv) => {
-  if (e.data) {
-    const symbol = toSymDict[e.data];
+  e.preventDefault();
+
+  const data =
+    e.data ||
+    (e.clipboardData && e.clipboardData.getData('Text')) ||
+    (window.clipboardData && window.clipboardData.getData('Text')) ||
+    wffTextarea.value;
+  if (data) {
+    const symbol = toSymDict[data];
+    let dataParsed;
+    try {
+      dataParsed = Logic._parse(parseFromSym(data));
+    } catch (error) {}
     if (symbol) {
-      const cursorPosition = wffTextarea.selectionStart;
+      let selectionStart = wffTextarea.selectionStart;
+      let selectionEnd = wffTextarea.selectionEnd;
+      if (e.clipboardData) {
+        selectionStart += 1;
+      }
+      const spliceNum = e.clipboardData
+        ? selectionEnd - selectionStart + data.length
+        : selectionEnd - selectionStart + 1;
       const wffArray = wffTextarea.value.split('');
-      wffArray.splice(cursorPosition - 1, 1, symbol);
+      wffArray.splice(selectionStart - 1, spliceNum, symbol);
       wffTextarea.value = wffArray.join('');
-      wffTextarea.selectionStart = cursorPosition;
-      wffTextarea.selectionEnd = cursorPosition;
+      wffTextarea.selectionStart = selectionStart;
+      wffTextarea.selectionEnd = selectionStart;
+      let wffParsed;
+      try {
+        wffParsed = Logic._parse(parseFromSym(wffTextarea.value));
+      } catch (error) {}
+      if (wffParsed) {
+        submitButton.disabled = false;
+      } else {
+        submitButton.disabled = true;
+      }
+    } else if (dataParsed) {
+      const selectionStart = wffTextarea.selectionStart;
+      const wffArray = wffTextarea.value.split('');
+      wffArray.splice(selectionStart, data.length, parseToSym(data));
+      wffTextarea.value = wffArray.join('');
+      wffTextarea.selectionStart = selectionStart + data.length;
+      wffTextarea.selectionEnd = selectionStart + data.length;
+      let wffParsed;
+      try {
+        wffParsed = Logic._parse(parseFromSym(wffTextarea.value));
+      } catch (error) {}
+      if (wffParsed) {
+        submitButton.disabled = false;
+      } else {
+        const wffArray = wffTextarea.value.split('');
+        wffArray.splice(selectionStart, data.length);
+        wffTextarea.value = wffArray.join('');
+        submitButton.disabled = true;
+      }
+    } else if (symStrIsValid(data)) {
+      submitButton.disabled = true;
+      let selectionStart = wffTextarea.selectionStart;
+      if (!(e.data || (e.clipboardData && e.clipboardData.getData('Text')))) {
+        selectionStart = wffTextarea.selectionStart - data.length;
+      }
+      const wffArray = wffTextarea.value.split('');
+      wffArray.splice(selectionStart, data.length, parseToSym(data));
+      wffTextarea.value = wffArray.join('');
+      wffTextarea.selectionStart = selectionStart + data.length;
+      wffTextarea.selectionEnd = selectionStart + data.length;
     } else {
-      const cursorPosition = wffTextarea.selectionStart;
+      submitButton.disabled = true;
+      const selectionStart = wffTextarea.selectionStart;
       const wffArray = wffTextarea.value.split('');
-      wffArray.splice(cursorPosition - 1, 1);
+      wffArray.splice(selectionStart - 1, 1);
       wffTextarea.value = wffArray.join('');
-      wffTextarea.selectionStart = cursorPosition;
-      wffTextarea.selectionEnd = cursorPosition;
+      wffTextarea.selectionStart = selectionStart;
+      wffTextarea.selectionEnd = selectionStart;
       resultDiv.innerHTML = `
               <div>
                 The only inputs allowed are:
@@ -219,8 +291,6 @@ const handleInputChange = (e, resultDiv) => {
                 <ul>
                   <li>t for ⊤</li>
                   <li>f for ⊥</li>
-                  <li>( for (</li>
-                  <li>) for )</li>
                   <li>N for ¬</li>
                   <li>A for ∧</li>
                   <li>O for ∨</li>
@@ -233,9 +303,11 @@ const handleInputChange = (e, resultDiv) => {
     }
   }
   try {
+    const parsed = Logic._parse(parseFromSym(wffTextarea.value));
     if (
-      (bruteButton.checked || shortButton.checked) &&
-      Logic._parse(parseFromSym(wffTextarea.value))
+      (document.getElementById('brute-force').checked ||
+        document.getElementById('short-tables').checked) &&
+      parsed
     ) {
       submitButton.disabled = false;
     } else {
