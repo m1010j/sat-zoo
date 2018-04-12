@@ -6,47 +6,50 @@
   <title>Sat Zoo</title>
   <script type="text/javascript" src="./script.js">
   </script>
-  <link href="https://fonts.googleapis.com/css?family=Padauk" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Anonymous+Pro|Padauk:400,700" rel="stylesheet">
+  <link rel="stylesheet" href="./reset.css">
   <link rel="stylesheet" href="./styles.css">
 </head>
 
 <body>
   <form action="index.html" method="post">
     <h1>Sat Zoo</h1>
-    <textarea id="wffTextarea" name="wff" rows="8" cols="80" placeholder="Enter a well-formed formula or generate one below"></textarea>
-    <div class="keyboard atoms">
-      <button id="top" type="button" name="button">⊤</button>
-      <button id="bottom" type="button" name="button">⊥</button>
-      <button id="1" type="button" name="button">1</button>
-      <button id="2" type="button" name="button">2</button>
-      <button id="3" type="button" name="button">3</button>
-      <button id="4" type="button" name="button">4</button>
-      <button id="5" type="button" name="button">5</button>
-      <button id="6" type="button" name="button">6</button>
-      <button id="7" type="button" name="button">7</button>
-      <button id="8" type="button" name="button">8</button>
-      <button id="9" type="button" name="button">9</button>
-      <button id="0" type="button" name="button">0</button>
+    <textarea id="wff-textarea" name="wff" rows="8" cols="80" placeholder="Enter or generate a well-formed formula"></textarea>
+
+    <div class="keypad">
+      <button class="keypad-button atomic-button" id="top" type="button" name="button">⊤</button>
+      <button class="keypad-button atomic-button" id="bottom" type="button" name="button">⊥</button>
+      <button class="keypad-button atomic-button number-button" id="one" type="button" name="button">1</button>
+      <button class="keypad-button atomic-button number-button" id="two" type="button" name="button">2</button>
+      <button class="keypad-button atomic-button number-button" id="three" type="button" name="button">3</button>
+      <button class="keypad-button atomic-button number-button" id="four" type="button" name="button">4</button>
+      <button class="keypad-button atomic-button number-button" id="five" type="button" name="button">5</button>
+      <button class="keypad-button atomic-button number-button" id="six" type="button" name="button">6</button>
+      <button class="keypad-button atomic-button number-button" id="seven" type="button" name="button">7</button>
+      <button class="keypad-button atomic-button number-button" id="eight" type="button" name="button">8</button>
+      <button class="keypad-button atomic-button number-button" id="nine" type="button" name="button">9</button>
+      <button class="keypad-button atomic-button number-button" id="zero" type="button" name="button">0</button>
+      <button class="keypad-button syntax-button" id="open-parens" type="button" name="button">(</button>
+      <button class="keypad-button syntax-button" id="close-parens" type="button" name="button">)</button>
+      <button class="keypad-button syntax-button connective-button" id="not" type="button" name="button">¬</button>
+      <button class="keypad-button syntax-button connective-button" id="and" type="button" name="button">∧</button>
+      <button class="keypad-button syntax-button connective-button" id="or" type="button" name="button">∨</button>
+      <button class="keypad-button syntax-button connective-button" id="xor" type="button" name="button">⊻</button>
+      <button class="keypad-button syntax-button connective-button" id="if" type="button" name="button">→</button>
+      <button class="keypad-button syntax-button connective-button" id="iff" type="button" name="button">≡</button>
+      <input id="wff-length" type="number" name="wff-length" placeholder="# of atoms">
+      <button id="generate-button" type="button" name="button" disabled>Generate!</button>
+      <label id="brute-force-container" class="checkbox-container">Brute force
+        <input type="checkbox" id="brute-force" name="brute-force" value="brute-force" checked type="checkbox">
+        <span class="checkmark"></span>
+      </label>
+      <label id="short-tables-container" class="checkbox-container">Short truth tables
+        <input type="checkbox" id="short-tables" name="brute-force" value="brute-force" checked type="checkbox">
+        <span class="checkmark"></span>
+      </label>
+      <input id="submit-button" type="submit" name="" value="Test!" disabled>
     </div>
-    <div class="keyboard rest">
-      <button id="open-parens" type="button" name="button">(</button>
-      <button id="close-parens" type="button" name="button">)</button>
-      <button id="not" type="button" name="button">¬</button>
-      <button id="and" type="button" name="button">∧</button>
-      <button id="or" type="button" name="button">∨</button>
-      <button id="xor" type="button" name="button">⊻</button>
-      <button id="if" type="button" name="button">→</button>
-      <button id="iff" type="button" name="button">≡</button>
-    </div>
-    <input id="wffLength" type="number" name="wffLength" placeholder="Number of atoms">
-    <button id="generateButton" type="button" name="button" disabled>Generate Formula</button>
-    <div class="algorithms">
-      <input type="checkbox" id="brute-force" name="brute-force" value="brute-force" checked>
-      <label for="brute-force"></label>Brute force</label>
-      <input type="checkbox" id="short-tables" name="short-tables" value="short-tables" checked>
-      <label for="short-tables"></label>Short truth tables</label>
-    </div>
-    <input id="submitButton" type="submit" name="" value="Test" disabled>
+
   </form>
   <div id="result">
 

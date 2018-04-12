@@ -15149,17 +15149,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // ref.once('value').then(function(snapshot) {
   //   console.log(snapshot.val().benchmarks);
   // });
-  const generateButton = document.getElementById('generateButton');
-  const submitButton = document.getElementById('submitButton');
-  const wffTextarea = document.getElementById('wffTextarea');
-  const wffLengthInput = document.getElementById('wffLength');
+  const generateButton = document.getElementById('generate-button');
+  const submitButton = document.getElementById('submit-button');
+  const wffTextarea = document.getElementById('wff-textarea');
+  const wffLengthInput = document.getElementById('wff-length');
   const resultDiv = document.getElementById('result');
-  const atoms = Array.from(document.querySelector('.atoms').children);
-  const rest = Array.from(document.querySelector('.rest').children);
-  const keyboard = atoms.concat(rest);
+  const keypad = Array.from(document.querySelector('.keypad').children);
   const bruteButton = document.getElementById('brute-force');
   const shortButton = document.getElementById('short-tables');
-
   let worker;
 
   if (window.Worker) {
@@ -15177,9 +15174,10 @@ document.addEventListener('DOMContentLoaded', () => {
     submitButton.disabled = false;
     wffTextarea.value = wff;
     resultDiv.innerHTML = '';
+    adjustTextarea(wffTextarea);
   });
 
-  keyboard.forEach(key => {
+  keypad.forEach(key => {
     key.addEventListener('click', e => {
       const selectionStart = wffTextarea.selectionStart;
       const wffArray = wffTextarea.value.split('');
@@ -15188,6 +15186,7 @@ document.addEventListener('DOMContentLoaded', () => {
       wffTextarea.focus();
       wffTextarea.selectionStart = selectionStart + 1;
       wffTextarea.selectionEnd = selectionStart + 1;
+      adjustTextarea(wffTextarea);
     });
   });
 
@@ -15329,6 +15328,14 @@ const symStrIsValid = str => {
 const handleInputChange = (e, resultDiv) => {
   e.preventDefault();
 
+  const generateButton = document.getElementById('generate-button');
+  const submitButton = document.getElementById('submit-button');
+  const wffTextarea = document.getElementById('wff-textarea');
+  const wffLengthInput = document.getElementById('wff-length');
+  const keypad = Array.from(document.querySelector('.keypad').children);
+  const bruteButton = document.getElementById('brute-force');
+  const shortButton = document.getElementById('short-tables');
+
   const data =
     e.data ||
     (e.clipboardData && e.clipboardData.getData('Text')) ||
@@ -15455,6 +15462,13 @@ const handleInputChange = (e, resultDiv) => {
   } catch (error) {
     submitButton.disabled = true;
   }
+
+  adjustTextarea(wffTextarea);
+};
+
+const adjustTextarea = textarea => {
+  textarea.style.height = '1px';
+  textarea.style.height = `${textarea.scrollHeight - 15}px`;
 };
 
 
@@ -27833,11 +27847,11 @@ function stop(id) {
 
 
 const benchmark = (wff, ref, worker) => {
-  const generateButton = document.getElementById('generateButton');
-  const submitButton = document.getElementById('submitButton');
-  const wffTextarea = document.getElementById('wffTextarea');
+  const generateButton = document.getElementById('generate-button');
+  const submitButton = document.getElementById('submit-button');
+  const wffTextarea = document.getElementById('wff-textarea');
   const resultDiv = document.getElementById('result');
-  const wffLengthInput = document.getElementById('wffLength');
+  const wffLengthInput = document.getElementById('wff-length');
   const bruteChecked = document.getElementById('brute-force').checked;
   const shortChecked = document.getElementById('short-tables').checked;
   generateButton.disabled = true;
@@ -27868,16 +27882,24 @@ const benchmark = (wff, ref, worker) => {
           if (shortChecked) {
             if (postData.brute.bruteModel) {
               let resultString = '';
-              for (let key in postData.brute.bruteModel) {
-                resultString = `${resultString}<br />&nbsp;&nbsp;${key}: ${
-                  postData.brute.bruteModel[key]
-                }`;
+              const keys = Object.keys(postData.brute.bruteModel);
+              for (let i = 0; i < keys.length; i++) {
+                const key = keys[i];
+                if (i < keys.length - 1) {
+                  resultString = `${resultString}&nbsp;&nbsp;${key}: ${
+                    postData.brute.bruteModel[key]
+                  }</br>`;
+                } else {
+                  resultString = `${resultString}&nbsp;&nbsp;${key}: ${
+                    postData.brute.bruteModel[key]
+                  }`;
+                }
               }
               resultDiv.innerHTML = `
               <h2>Brute force</h2>
               <p>The formula is satisfiable.</p>
               <p>The first model found was:</p>
-              <p>{${resultString}<br />}</p>
+              <p class="model">${resultString}</p>
               <p>It took ${
                 postData.brute.testDuration
               } milliseconds to find this model.</p>
@@ -27910,17 +27932,25 @@ const benchmark = (wff, ref, worker) => {
 
                 if (postData.short.shortModel) {
                   let resultString = '';
-                  for (let key in postData.short.shortModel) {
-                    resultString = `${resultString}<br />&nbsp;&nbsp;${key}: ${
-                      postData.short.shortModel[key]
-                    }`;
+                  const keys = Object.keys(postData.short.shortModel);
+                  for (let i = 0; i < keys.length; i++) {
+                    const key = keys[i];
+                    if (i < keys.length - 1) {
+                      resultString = `${resultString}&nbsp;&nbsp;${key}: ${
+                        postData.short.shortModel[key]
+                      }</br>`;
+                    } else {
+                      resultString = `${resultString}&nbsp;&nbsp;${key}: ${
+                        postData.short.shortModel[key]
+                      }`;
+                    }
                   }
                   resultDiv.innerHTML = `
                   ${resultDiv.innerHTML}
                   <h2>Short truth tables</h2>
                   <p>The formula is satisfiable.</p>
                   <p>The model found was:</p>
-                  <p>{${resultString}<br />}</p>
+                  <p class="model">${resultString}</p>
                   <p>It took ${
                     postData.short.testDuration
                   } milliseconds to find this model.</p>
@@ -27948,7 +27978,7 @@ const benchmark = (wff, ref, worker) => {
               <h2>Brute force</h2>
               <p>The formula is satisfiable.</p>
               <p>The first model found was:</p>
-              <p>{${resultString}<br />}</p>
+              <p class="model">${resultString}</p>
               <p>It took ${
                 postData.brute.testDuration
               } milliseconds to find this model.</p>
@@ -27990,7 +28020,7 @@ const benchmark = (wff, ref, worker) => {
                     <h2>Short truth tables</h2>
                     <p>The formula is satisfiable.</p>
                     <p>The model found was:</p>
-                    <p>{${resultString}<br />}</p>
+                    <p class="model">${resultString}</p>
                     <p>It took ${
                       postData.short.testDuration
                     } milliseconds to find this model.</p>
@@ -28012,10 +28042,10 @@ const benchmark = (wff, ref, worker) => {
 
 
 const autoGenerateBenchmarks = () => {
-  const generateButton = document.getElementById('generateButton');
-  const submitButton = document.getElementById('submitButton');
-  const wffLengthInput = document.getElementById('wffLength');
-  const wffTextarea = document.getElementById('wffTextarea');
+  const generateButton = document.getElementById('generate-button');
+  const submitButton = document.getElementById('submit-button');
+  const wffLengthInput = document.getElementById('wff-length');
+  const wffTextarea = document.getElementById('wff-textarea');
 
   let maxLength;
   const over20 = Math.floor(Math.random()) > 0.7;

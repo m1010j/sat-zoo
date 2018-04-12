@@ -10,17 +10,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // ref.once('value').then(function(snapshot) {
   //   console.log(snapshot.val().benchmarks);
   // });
-  const generateButton = document.getElementById('generateButton');
-  const submitButton = document.getElementById('submitButton');
-  const wffTextarea = document.getElementById('wffTextarea');
-  const wffLengthInput = document.getElementById('wffLength');
+  const generateButton = document.getElementById('generate-button');
+  const submitButton = document.getElementById('submit-button');
+  const wffTextarea = document.getElementById('wff-textarea');
+  const wffLengthInput = document.getElementById('wff-length');
   const resultDiv = document.getElementById('result');
-  const atoms = Array.from(document.querySelector('.atoms').children);
-  const rest = Array.from(document.querySelector('.rest').children);
-  const keyboard = atoms.concat(rest);
+  const keypad = Array.from(document.querySelector('.keypad').children);
   const bruteButton = document.getElementById('brute-force');
   const shortButton = document.getElementById('short-tables');
-
   let worker;
 
   if (window.Worker) {
@@ -38,9 +35,10 @@ document.addEventListener('DOMContentLoaded', () => {
     submitButton.disabled = false;
     wffTextarea.value = wff;
     resultDiv.innerHTML = '';
+    adjustTextarea(wffTextarea);
   });
 
-  keyboard.forEach(key => {
+  keypad.forEach(key => {
     key.addEventListener('click', e => {
       const selectionStart = wffTextarea.selectionStart;
       const wffArray = wffTextarea.value.split('');
@@ -49,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
       wffTextarea.focus();
       wffTextarea.selectionStart = selectionStart + 1;
       wffTextarea.selectionEnd = selectionStart + 1;
+      adjustTextarea(wffTextarea);
     });
   });
 
@@ -190,6 +189,14 @@ const symStrIsValid = str => {
 const handleInputChange = (e, resultDiv) => {
   e.preventDefault();
 
+  const generateButton = document.getElementById('generate-button');
+  const submitButton = document.getElementById('submit-button');
+  const wffTextarea = document.getElementById('wff-textarea');
+  const wffLengthInput = document.getElementById('wff-length');
+  const keypad = Array.from(document.querySelector('.keypad').children);
+  const bruteButton = document.getElementById('brute-force');
+  const shortButton = document.getElementById('short-tables');
+
   const data =
     e.data ||
     (e.clipboardData && e.clipboardData.getData('Text')) ||
@@ -316,4 +323,11 @@ const handleInputChange = (e, resultDiv) => {
   } catch (error) {
     submitButton.disabled = true;
   }
+
+  adjustTextarea(wffTextarea);
+};
+
+const adjustTextarea = textarea => {
+  textarea.style.height = '1px';
+  textarea.style.height = `${textarea.scrollHeight - 15}px`;
 };
