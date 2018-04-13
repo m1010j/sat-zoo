@@ -9,6 +9,8 @@ export const benchmark = (wff, ref, worker) => {
   const wffLengthInput = document.getElementById('wff-length');
   const bruteChecked = document.getElementById('brute-force').checked;
   const shortChecked = document.getElementById('short-tables').checked;
+  const loader = document.getElementById('loader-container');
+
   generateButton.disabled = true;
   submitButton.disabled = true;
   wffTextarea.disabled = true;
@@ -16,9 +18,11 @@ export const benchmark = (wff, ref, worker) => {
 
   const beforeTime = new Date();
   if (worker) {
+    loader.style.display = 'block';
     worker.postMessage({ wff, bruteChecked, shortChecked });
   }
   worker.onmessage = e => {
+    loader.style.display = 'none';
     const postData = e.data;
 
     if (bruteChecked) {
@@ -51,7 +55,8 @@ export const benchmark = (wff, ref, worker) => {
                 }
               }
               resultDiv.innerHTML = `
-              <h2>Brute force</h2>
+              <h2>Result</h2>
+              <h3>Brute force</h3>
               <p>The formula is satisfiable.</p>
               <p>The first model found was:</p>
               <p class="model">${resultString}</p>
@@ -61,7 +66,7 @@ export const benchmark = (wff, ref, worker) => {
             `;
             } else {
               resultDiv.innerHTML = `
-              <p>The formula isn't satisfiable</p>
+              <p>The formula isn't satisfiable.</p>
               <p>It took ${
                 postData.brute.testDuration
               } milliseconds to arrive at this.</p>
@@ -80,7 +85,7 @@ export const benchmark = (wff, ref, worker) => {
               .ref()
               .update(updates)
               .then(() => {
-                generateButton.disabled = false;
+                generateButton.disabled = !(parseInt(wffLengthInput.value) > 0);
                 submitButton.disabled = false;
                 wffTextarea.disabled = false;
                 wffLengthInput.disabled = false;
@@ -102,7 +107,7 @@ export const benchmark = (wff, ref, worker) => {
                   }
                   resultDiv.innerHTML = `
                   ${resultDiv.innerHTML}
-                  <h2>Short truth tables</h2>
+                  <h3>Short truth tables</h3>
                   <p>The formula is satisfiable.</p>
                   <p>The model found was:</p>
                   <p class="model">${resultString}</p>
@@ -112,25 +117,41 @@ export const benchmark = (wff, ref, worker) => {
                 `;
                 } else {
                   resultDiv.innerHTML = `
-                  <p>The formula isn't satisfiable</p>
+                  <h2>Result</h2>
+                  <p>The formula isn't satisfiable.</p>
+                  <p>It took ${
+                    postData.brute.testDuration
+                  } milliseconds to arrive at this using the brute force algorithm.</p>
                   <p>It took ${
                     postData.short.testDuration
-                  } milliseconds to arrive at this.</p>
+                  } milliseconds to arrive at this using the short truth tables algorithm.</p>
                 `;
                 }
               });
           } else {
+            generateButton.disabled = !(parseInt(wffLengthInput.value) > 0);
             submitButton.disabled = false;
+            wffTextarea.disabled = false;
+            wffLengthInput.disabled = false;
 
             if (postData.brute.bruteModel) {
               let resultString = '';
-              for (let key in postData.brute.bruteModel) {
-                resultString = `${resultString}<br />&nbsp;&nbsp;${key}: ${
-                  postData.brute.bruteModel[key]
-                }`;
+              const keys = Object.keys(postData.brute.bruteModel);
+              for (let i = 0; i < keys.length; i++) {
+                const key = keys[i];
+                if (i < keys.length - 1) {
+                  resultString = `${resultString}&nbsp;&nbsp;${key}: ${
+                    postData.brute.bruteModel[key]
+                  }</br>`;
+                } else {
+                  resultString = `${resultString}&nbsp;&nbsp;${key}: ${
+                    postData.brute.bruteModel[key]
+                  }`;
+                }
               }
               resultDiv.innerHTML = `
-              <h2>Brute force</h2>
+              <h2>Result</h2>
+              <h3>Brute force</h3>
               <p>The formula is satisfiable.</p>
               <p>The first model found was:</p>
               <p class="model">${resultString}</p>
@@ -140,10 +161,11 @@ export const benchmark = (wff, ref, worker) => {
             `;
             } else {
               resultDiv.innerHTML = `
-              <p>The formula isn't satisfiable</p>
+              <h2>Result</h2>
+              <p>The formula isn't satisfiable.</p>
               <p>It took ${
                 postData.brute.testDuration
-              } milliseconds to arrive at this.</p>
+              } milliseconds to arrive at this using the brute force algorithm.</p>
             `;
             }
           }
@@ -162,31 +184,44 @@ export const benchmark = (wff, ref, worker) => {
           .ref()
           .update(updates)
           .then(() => {
+            generateButton.disabled = !(parseInt(wffLengthInput.value) > 0);
             submitButton.disabled = false;
+            wffTextarea.disabled = false;
+            wffLengthInput.disabled = false;
 
             if (postData.short.shortModel) {
               let resultString = '';
-              for (let key in postData.short.shortModel) {
-                resultString = `${resultString}<br />&nbsp;&nbsp;${key}: ${
-                  postData.short.shortModel[key]
-                }`;
+              const keys = Object.keys(postData.short.shortModel);
+              for (let i = 0; i < keys.length; i++) {
+                const key = keys[i];
+                if (i < keys.length - 1) {
+                  resultString = `${resultString}&nbsp;&nbsp;${key}: ${
+                    postData.short.shortModel[key]
+                  }</br>`;
+                } else {
+                  resultString = `${resultString}&nbsp;&nbsp;${key}: ${
+                    postData.short.shortModel[key]
+                  }`;
+                }
               }
               resultDiv.innerHTML = `
-                    <h2>Short truth tables</h2>
-                    <p>The formula is satisfiable.</p>
-                    <p>The model found was:</p>
-                    <p class="model">${resultString}</p>
-                    <p>It took ${
-                      postData.short.testDuration
-                    } milliseconds to find this model.</p>
-                  `;
+                <h2>Result</h2>
+                <h3>Short truth tables</h3>
+                <p>The formula is satisfiable.</p>
+                <p>The model found was:</p>
+                <p class="model">${resultString}</p>
+                <p>It took ${
+                  postData.short.testDuration
+                } milliseconds to find this model.</p>
+              `;
             } else {
               resultDiv.innerHTML = `
-                    <p>The formula isn't satisfiable</p>
-                    <p>It took ${
-                      postData.short.testDuration
-                    } milliseconds to arrive at this.</p>
-                  `;
+                <h2>Result</h2>
+                <p>The formula isn't satisfiable.</p>
+                <p>It took ${
+                  postData.short.testDuration
+                } milliseconds to arrive at this using the short truth tables algorithm.</p>
+              `;
             }
           });
       }
