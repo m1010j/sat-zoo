@@ -470,7 +470,7 @@ input[type='number'] {
   overflow: auto;
   width: 31rem;
   height: calc(100vh - 27.1rem);
-  min-height: 10rem;
+  min-height: 8rem;
   box-shadow: inset 0 0 0.1rem rgba(0, 0, 0, 0.16),
     inset 0 0.1rem 0.2rem rgba(0, 0, 0, 0.32);
   border-radius: 0.2rem;
@@ -516,6 +516,7 @@ input[type='number'] {
   width: 10rem;
   height: 10rem;
 }
+
 .loader {
   margin: calc(50vh - 5rem) auto;
   font-size: 10px;
@@ -531,6 +532,7 @@ input[type='number'] {
   -webkit-animation: load8 1.1s infinite linear;
   animation: load8 1.1s infinite linear;
 }
+
 @-webkit-keyframes load8 {
   0% {
     -webkit-transform: rotate(0deg);
@@ -541,6 +543,7 @@ input[type='number'] {
     transform: rotate(360deg);
   }
 }
+
 @keyframes load8 {
   0% {
     -webkit-transform: rotate(0deg);
@@ -549,5 +552,11 @@ input[type='number'] {
   100% {
     -webkit-transform: rotate(360deg);
     transform: rotate(360deg);
+  }
+}
+
+@media (orientation: portrait) {
+  html {
+    font-size: 1.8em;
   }
 }
