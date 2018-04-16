@@ -15214,6 +15214,7 @@ document.addEventListener('DOMContentLoaded', () => {
     resetResultDiv(resultDiv);
     generateButton.disabled = true;
     submitButton.disabled = true;
+    adjustTextarea(wffTextarea);
   });
 
   keypad.forEach(key => {
@@ -15565,10 +15566,11 @@ const instructions = `
   </h2>
   <p>Sat Zoo is a tool to test whether a well-formed formula of Boolean logic is satisfiable. Use the keypad or your keyboard
     to enter to enter a formula above, or randomly generate a formula containing a specified number of atoms.</p>
-  <p>Well-formed formulas are made up of integers, which are understood as atoms, and the connectives ¬ ('not'), ∧ ('and'),
+  <p>Well-formed formulas are made up of integers, which are understood as atoms, ⊤ ('true'), ⊥ ('false'), and the connectives ¬ ('not'), ∧ ('and'),
     ∨ ('or'), ⊻ ('xor'), → ('if . . . then . . .'), ≡ ('if and only if'), and the parentheses. </p>
-  <p>To use your keyboard to type in a well-formed formula, type 'N' for ¬, 'A' for ∧, 'O' for ∨, 'X' for ⊻, 'T' for →, and
-    'B' for ≡.</p>
+  <p>To use your keyboard to type in a well-formed formula, type 't' for ⊤, 'f' for ⊥, 'N' for ¬, 'A' for ∧, 'O' for ∨, 'X' for ⊻, 'T' for →, and
+    'B' for ≡.
+  </p>
   <p>
     You can choose one or two algorithms to determine satisfiability. The brute force algorithm generates all possible models
     for a well-formed formula (i.e. all possible assignments of truth values to the atoms). It then searches through these possible 
@@ -15598,10 +15600,11 @@ const instructionsCorrection = `
   </h2>
   <p>Sat Zoo is a tool to test whether a well-formed formula of Boolean logic is satisfiable. Use the keypad or your keyboard
     to enter to enter a formula above, or randomly generate a formula containing a specified number of atoms.</p>
-  <p class="warning">Well-formed formulas are made up of integers, which are understood as atoms, and the connectives ¬ ('not'), ∧ ('and'),
+  <p class="warning">Well-formed formulas are made up of integers, which are understood as atoms, ⊤ ('true'), ⊥ ('false'), and the connectives ¬ ('not'), ∧ ('and'),
     ∨ ('or'), ⊻ ('xor'), → ('if . . . then . . .'), ≡ ('if and only if'), and the parentheses. </p>
-  <p class="warning">To use your keyboard to type in a well-formed formula, type 'N' for ¬, 'A' for ∧, 'O' for ∨, 'X' for ⊻, 'T' for →, and
-    'B' for ≡.</p>
+  <p class="warning">To use your keyboard to type in a well-formed formula, type 't' for ⊤, 'f' for ⊥, 'N' for ¬, 'A' for ∧, 'O' for ∨, 'X' for ⊻, 'T' for →, and
+    'B' for ≡.
+  </p>
   <p>
     You can choose one or two algorithms to determine satisfiability. The brute force algorithm generates all possible models
     for a well-formed formula (i.e. all possible assignments of truth values to the atoms). It then searches through these possible 
