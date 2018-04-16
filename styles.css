@@ -32,6 +32,11 @@ h3 {
   font-size: 1.5rem;
 }
 
+ul {
+  list-style: square;
+  margin: 0 0 0 1.5rem;
+}
+
 .grid {
   display: grid;
   grid-template-columns: 3rem 3rem 3rem 3rem 3rem 0.5rem 3rem 3rem 3rem 0.5rem 3rem 3rem;
@@ -41,7 +46,8 @@ h3 {
 }
 
 #generate-button,
-#submit-button {
+#submit-button,
+#reset-button {
   cursor: pointer;
   font-family: 'Jaldi', sans-serif;
   color: black;
@@ -57,18 +63,28 @@ h3 {
 }
 
 #generate-button:enabled,
-#submit-button:enabled {
+#submit-button:enabled,
+#reset-button {
   background-color: rgba(255, 0, 0, 0.356);
 }
 
-#generate-button {
+#generate-button,
+#reset-button {
   grid-column-start: 11;
   grid-column-end: 13;
-  grid-row-start: 1;
   justify-self: center;
   align-self: center;
   height: 90%;
   width: 100%;
+}
+
+#generate-button {
+  grid-row-start: 1;
+}
+
+#reset-button {
+  grid-row-start: 2;
+  grid-row-end: 4;
 }
 
 #submit-button {
@@ -84,13 +100,15 @@ h3 {
 }
 
 #generate-button:enabled:hover,
-#submit-button:enabled:hover {
+#submit-button:enabled:hover,
+#reset-button:hover {
   background-color: rgba(255, 0, 0, 0.5);
   box-shadow: 0 0 0.2rem rgba(0, 0, 0, 0.16),
     0 0.2rem 0.4rem rgba(0, 0, 0, 0.32);
 }
 
-#generate-button:enabled:hover {
+#generate-button:enabled:hover,
+#reset-button:hover {
   font-weight: 700;
 }
 
@@ -119,7 +137,7 @@ input {
 
 .checkbox-container {
   grid-column-start: 7;
-  grid-column-end: 13;
+  grid-column-end: 11;
   width: 100%;
   height: 100%;
   justify-self: center;
@@ -365,7 +383,8 @@ input[type='number']:hover::-webkit-inner-spin-button {
 
 .keypad-button,
 textarea,
-input[type='number'] {
+input[type='number'],
+.formula {
   box-shadow: 0 0 0.1rem rgba(0, 0, 0, 0.16),
     0 0.1rem 0.2rem rgba(0, 0, 0, 0.32);
 }
@@ -497,6 +516,27 @@ input[type='number'] {
 .warning {
   background-color: rgba(255, 0, 0, 0.555);
   color: white;
+}
+
+.formula {
+  display: block;
+  word-wrap: break-word;
+  font-family: 'Anonymous Pro', monospace;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 0.2rem;
+  transition: background-color 0.1s ease-in-out, font-weight 0.1s ease-in-out,
+    box-shadow 0.1s ease-in-out, width 0.1s ease-in-out, height 0.1s ease-in-out;
+}
+
+.formula:hover {
+  font-weight: 700;
+  box-shadow: 0 0 0.2rem rgba(0, 0, 0, 0.16),
+    0 0.2rem 0.4rem rgba(0, 0, 0, 0.32);
+  cursor: pointer;
 }
 
 #loader-container {

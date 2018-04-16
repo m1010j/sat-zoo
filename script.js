@@ -15169,22 +15169,25 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 
 document.addEventListener('DOMContentLoaded', () => {
+  const resultDiv = document.getElementById('result');
+
+  resetResultDiv(resultDiv);
+
   Object(__WEBPACK_IMPORTED_MODULE_2__util__["b" /* initializeFirebase */])();
   const ref = __WEBPACK_IMPORTED_MODULE_0_firebase___default.a.database().ref();
   // ref.once('value').then(function(snapshot) {
   //   console.log(snapshot.val().benchmarks);
   // });
   const generateButton = document.getElementById('generate-button');
+  const resetButton = document.getElementById('reset-button');
   const submitButton = document.getElementById('submit-button');
   const wffTextarea = document.getElementById('wff-textarea');
   const wffLengthInput = document.getElementById('wff-length');
-  const resultDiv = document.getElementById('result');
   const keypad = Array.from(document.getElementsByClassName('keypad-button'));
+  const formulas = Array.from(document.getElementsByClassName('formula'));
   const bruteButton = document.getElementById('brute-force');
   const shortButton = document.getElementById('short-tables');
   let worker;
-
-  resultDiv.innerHTML = instructions;
 
   if (window.Worker) {
     worker = new __WEBPACK_IMPORTED_MODULE_4_worker_loader_Worker_js___default.a('./worker.js');
@@ -15200,8 +15203,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const wff = parseToSym(Object(__WEBPACK_IMPORTED_MODULE_2__util__["a" /* generateWff */])(wffLength));
     submitButton.disabled = false;
     wffTextarea.value = wff;
-    resultDiv.innerHTML = instructions;
+    resetResultDiv(resultDiv);
     adjustTextarea(wffTextarea);
+  });
+
+  resetButton.addEventListener('click', e => {
+    e.preventDefault();
+    wffTextarea.value = '';
+    wffLengthInput.value = '';
+    resetResultDiv(resultDiv);
+    generateButton.disabled = true;
+    submitButton.disabled = true;
   });
 
   keypad.forEach(key => {
@@ -15209,18 +15221,11 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
     });
     key.addEventListener('click', e => {
-      const selectionStart = wffTextarea.selectionStart;
-      const wffArray = wffTextarea.value.split('');
       if (key.children[0] && key.children[0].nodeName === 'svg') {
-        if (selectionStart - 1 < 0) return;
-
-        wffArray.splice(selectionStart - 1, 1);
-        wffTextarea.value = wffArray.join('');
-        wffTextarea.focus();
-        wffTextarea.selectionStart = selectionStart - 1;
-        wffTextarea.selectionEnd = selectionStart - 1;
-        adjustTextarea(wffTextarea);
+        handleBackspace(wffTextarea);
       } else {
+        const selectionStart = wffTextarea.selectionStart;
+        const wffArray = wffTextarea.value.split('');
         wffArray.splice(selectionStart, 0, toSymDict[key.innerText]);
         wffTextarea.value = wffArray.join('');
         wffTextarea.focus();
@@ -15228,6 +15233,19 @@ document.addEventListener('DOMContentLoaded', () => {
         wffTextarea.selectionEnd = selectionStart + 1;
         adjustTextarea(wffTextarea);
       }
+    });
+  });
+
+  formulas.forEach(formula => {
+    formula.addEventListener('mousedown', e => {
+      e.preventDefault();
+    });
+    formula.addEventListener('click', e => {
+      wffTextarea.value = formula.innerText;
+      wffTextarea.selectionStart = formula.innerText.length;
+      wffTextarea.selectionEnd = formula.innerText.length;
+      submitButton.disabled = false;
+      wffTextarea.focus();
     });
   });
 
@@ -15257,7 +15275,12 @@ document.addEventListener('DOMContentLoaded', () => {
     wffTextarea.addEventListener(
       'input',
       e => {
-        handleInputChange(e, resultDiv);
+        e.preventDefault();
+        if (e.data) {
+          handleInputChange(e, resultDiv);
+        } else {
+          adjustTextarea(wffTextarea);
+        }
       },
       false
     );
@@ -15266,7 +15289,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   } else if (wffTextarea.attachEvent) {
     wffTextarea.attachEvent('onpropertychange', e => {
-      handleInputChange(e, resultDiv);
+      e.preventDefault();
+      if (e.data) {
+        handleInputChange(e, resultDiv);
+      } else {
+        handleBackspace(wffTextarea);
+      }
     });
   }
 
@@ -15367,8 +15395,6 @@ const symStrIsValid = str => {
 };
 
 const handleInputChange = (e, resultDiv) => {
-  e.preventDefault();
-
   const generateButton = document.getElementById('generate-button');
   const submitButton = document.getElementById('submit-button');
   const wffTextarea = document.getElementById('wff-textarea');
@@ -15377,7 +15403,7 @@ const handleInputChange = (e, resultDiv) => {
   const bruteButton = document.getElementById('brute-force');
   const shortButton = document.getElementById('short-tables');
 
-  resultDiv.innerHTML = instructions;
+  resetResultDiv(resultDiv);
 
   const data =
     e.data ||
@@ -15453,17 +15479,17 @@ const handleInputChange = (e, resultDiv) => {
       wffTextarea.selectionEnd = selectionStart;
       resultDiv.innerHTML = instructionsCorrection;
       setTimeout(() => {
-        resultDiv.innerHTML = instructions;
+        resetResultDiv(resultDiv);
         setTimeout(() => {
           resultDiv.innerHTML = instructionsCorrection;
           setTimeout(() => {
-            resultDiv.innerHTML = instructions;
+            resetResultDiv(resultDiv);
             setTimeout(() => {
-              resultDiv.innerHTML = instructions;
+              resetResultDiv(resultDiv);
               setTimeout(() => {
                 resultDiv.innerHTML = instructionsCorrection;
                 setTimeout(() => {
-                  resultDiv.innerHTML = instructions;
+                  resetResultDiv(resultDiv);
                 }, 333);
               });
             });
@@ -15490,12 +15516,47 @@ const handleInputChange = (e, resultDiv) => {
   adjustTextarea(wffTextarea);
 };
 
+const handleBackspace = wffTextarea => {
+  const selectionStart = wffTextarea.selectionStart;
+  const wffArray = wffTextarea.value.split('');
+  if (selectionStart - 1 < 0) return;
+
+  wffArray.splice(selectionStart - 1, 1);
+  wffTextarea.value = wffArray.join('');
+  wffTextarea.focus();
+  wffTextarea.selectionStart = selectionStart - 1;
+  wffTextarea.selectionEnd = selectionStart - 1;
+  adjustTextarea(wffTextarea);
+};
+
 const adjustTextarea = textarea => {
   textarea.style.height = '1px';
   textarea.style.height = `${textarea.scrollHeight - 15}px`;
   document.getElementById(
     'result'
   ).style.height = `calc(100vh + 17px - 27.1rem - ${textarea.style.height})`;
+};
+
+const resetResultDiv = resultDiv => {
+  resultDiv.innerHTML = instructions;
+  const generateButton = document.getElementById('generate-button');
+  const submitButton = document.getElementById('submit-button');
+  const wffTextarea = document.getElementById('wff-textarea');
+  const wffLengthInput = document.getElementById('wff-length');
+  const formulas = Array.from(document.getElementsByClassName('formula'));
+  formulas.forEach(formula => {
+    formula.addEventListener('mousedown', e => {
+      e.preventDefault();
+    });
+    formula.addEventListener('click', e => {
+      wffTextarea.value = formula.innerText;
+      wffTextarea.selectionStart = formula.innerText.length;
+      wffTextarea.selectionEnd = formula.innerText.length;
+      submitButton.disabled = false;
+      adjustTextarea(wffTextarea);
+      wffTextarea.focus();
+    });
+  });
 };
 
 const instructions = `
@@ -15508,12 +15569,26 @@ const instructions = `
     ∨ ('or'), ⊻ ('xor'), → ('if . . . then . . .'), ≡ ('if and only if'), and the parentheses. </p>
   <p>To use your keyboard to type in a well-formed formula, type 'N' for ¬, 'A' for ∧, 'O' for ∨, 'X' for ⊻, 'T' for →, and
     'B' for ≡.</p>
-  <p>You can choose one or two algorithms to determine satisfiability. The brute force algorithm generates all possible models
-    for a well-formed formula (i.e. all possible assignments of truth values to the atoms). The short truth table method
-    starts by supposing that the well-formed formula is true and assigns all subformulas the truth values that immediately
-    follow. If no further assignment follows, it successively goes through open possibilities. If it ever encounters a
-    contradiction, it backtracks and tries the next possibility, until it either finds a model or else concludes that there
+  <p>
+    You can choose one or two algorithms to determine satisfiability. The brute force algorithm generates all possible models
+    for a well-formed formula (i.e. all possible assignments of truth values to the atoms). It then searches through these possible 
+    models until it finds one in which the formula is true.
+  </p>
+  <p>The short truth table method starts by supposing that the well-formed formula is true and assigns all subformulas the truth 
+    values that immediately follow. If no further assignment follows, it successively goes through open possibilities. If it ever 
+    encounters a contradiction, it backtracks and tries the next possibility, until it either finds a model or else concludes that there
     is no model.
+  </p>
+  <p>
+    To see the relative strengths of these two algorithms, try the following formulas:
+    <ul>
+      <li>
+      <p class="formula">1∧¬1∧2∧3∧4∧5∧6∧7∧8∧9∧10∧11∧12∧13∧14∧15∧16</p>
+      </li>
+      <li>
+      <p class="formula">((1⊻18)→((4≡((15→5)⊻24))→((¬(12→(((4⊻19)∧5)⊻(19∨(17⊻17)))))→(5⊻3))))∧((4∨22)⊻(3∨(14→4)))</p>
+      </li>
+    </ul>
   </p>
 `;
 
@@ -15527,12 +15602,26 @@ const instructionsCorrection = `
     ∨ ('or'), ⊻ ('xor'), → ('if . . . then . . .'), ≡ ('if and only if'), and the parentheses. </p>
   <p class="warning">To use your keyboard to type in a well-formed formula, type 'N' for ¬, 'A' for ∧, 'O' for ∨, 'X' for ⊻, 'T' for →, and
     'B' for ≡.</p>
-  <p>You can choose one or two algorithms to determine satisfiability. The brute force algorithm generates all possible models
-    for a well-formed formula (i.e. all possible assignments of truth values to the atoms). The short truth table method
-    starts by supposing that the well-formed formula is true and assigns all subformulas the truth values that immediately
-    follow. If no further assignment follows, it successively goes through open possibilities. If it ever encounters a
-    contradiction, it backtracks and tries the next possibility, until it either finds a model or else concludes that there
+  <p>
+    You can choose one or two algorithms to determine satisfiability. The brute force algorithm generates all possible models
+    for a well-formed formula (i.e. all possible assignments of truth values to the atoms). It then searches through these possible 
+    models until it finds one in which the formula is true.
+  </p>
+  <p>The short truth table method starts by supposing that the well-formed formula is true and assigns all subformulas the truth 
+    values that immediately follow. If no further assignment follows, it successively goes through open possibilities. If it ever 
+    encounters a contradiction, it backtracks and tries the next possibility, until it either finds a model or else concludes that there
     is no model.
+  </p>
+  <p>
+    To see the relative strengths of these two algorithms, try the following formulas:
+    <ul>
+      <li>
+      <p class="formula">1∧¬1∧2∧3∧4∧5∧6∧7∧8∧9∧10∧11∧12∧13∧14∧15∧16</p>
+      </li>
+      <li>
+      <p class="formula">((1⊻18)→((4≡((15→5)⊻24))→((¬(12→(((4⊻19)∧5)⊻(19∨(17⊻17)))))→(5⊻3))))∧((4∨22)⊻(3∨(14→4)))</p>
+      </li>
+    </ul>
   </p>
 `;
 

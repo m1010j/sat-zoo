@@ -11,3 +11,9 @@ To use your keyboard to type in a well-formed formula, type 'N' for ¬, 'A' for 
 You can choose one or two algorithms to determine satisfiability. The brute force algorithm generates all possible models for a well-formed formula (i.e. all possible assignments of truth values to the atoms). It then searches through these possible models until it finds one in which the formula is true.
 
 The short truth table method starts by supposing that the well-formed formula is true and assigns all subformulas the truth values that immediately follow. If no further assignment follows, it successively goes through open possibilities. If it ever encounters a contradiction, it backtracks and tries the next possibility, until it either finds a model or else concludes that there is no model.
+
+To see the relative strengths of these two algorithms, try the following formulas:
+
+* 1∧¬1∧2∧3∧4∧5∧6∧7∧8∧9∧10∧11∧12∧13∧14∧15∧16
+
+* ((1⊻18)→((4≡((15→5)⊻24))→((¬(12→(((4⊻19)∧5)⊻(19∨(17⊻17)))))→(5⊻3))))∧((4∨22)⊻(3∨(14→4)))
