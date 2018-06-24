@@ -4,7 +4,7 @@ const wffTextarea = document.getElementById('wff-textarea');
 const resultDiv = document.getElementById('result');
 const wffLengthInput = document.getElementById('wff-length');
 
-const randomLength = (maxLength) => Math.floor(Math.random() * maxLength);
+const randomLength = maxLength => Math.floor(Math.random() * maxLength);
 
 const submit = () => {
   if (wffTextarea.value.length > 0) {
@@ -15,20 +15,20 @@ const submit = () => {
   }
 };
 
-const restart = () => {
+const restart = maxLength => {
   if (resultDiv.innerText[0] === 'R') {
-    run();
+    run(maxLength);
   } else {
-    setTimeout(restart, 100);
+    setTimeout(() => restart(maxLength), 100);
   }
 };
 
-const run = (maxLength) => {
+const run = maxLength => {
   wffTextarea.value = '';
   resultDiv.innerText = '';
   wffLengthInput.value = randomLength(maxLength);
   generateButton.disabled = false;
   generateButton.click();
   submit();
-  restart();
+  restart(maxLength);
 };
