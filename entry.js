@@ -1,6 +1,5 @@
-import firebase from 'firebase';
 import { benchmark } from './benchmark';
-import { initializeFirebase, generateWff } from './util';
+import { generateWff } from './util';
 import Logic from 'boolean-logic';
 import Worker from 'worker-loader!./Worker.js';
 
@@ -9,11 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   resetResultDiv(resultDiv);
 
-  initializeFirebase();
-  const ref = firebase.database().ref();
-  // ref.once('value').then(function(snapshot) {
-  //   console.log(snapshot.val().benchmarks);
-  // });
   const generateButton = document.getElementById('generate-button');
   const resetButton = document.getElementById('reset-button');
   const submitButton = document.getElementById('submit-button');
@@ -105,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   submitButton.addEventListener('click', e => {
     e.preventDefault();
-    benchmark(parseFromSym(wffTextarea.value), ref, worker);
+    benchmark(parseFromSym(wffTextarea.value), worker);
   });
 
   if (wffTextarea.addEventListener) {

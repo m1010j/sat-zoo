@@ -1,5 +1,4 @@
 import Logic from 'boolean-logic';
-import firebase from 'firebase';
 
 export const nth = num => {
   if (num % 10 === 1) {
@@ -65,16 +64,4 @@ export const generateWff = numAtoms => {
   } else {
     return `(N${wff})`;
   }
-};
-
-export const initializeFirebase = () => {
-  const config = {
-    apiKey: 'AIzaSyBGll1MQuJnfllmhEmFnhzksHwnTiLKosY',
-    authDomain: 'sat-zoo.firebaseapp.com',
-    databaseURL: 'https://sat-zoo.firebaseio.com',
-    projectId: 'sat-zoo',
-    storageBucket: 'sat-zoo.appspot.com',
-    messagingSenderId: '291041690959',
-  };
-  firebase.initializeApp(config);
 };
