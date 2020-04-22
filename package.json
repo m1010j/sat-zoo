@@ -19,7 +19,7 @@
     "webpack": "^3.8.1"
   },
   "devDependencies": {
-    "webpack-dev-server": "^2.10.1",
+    "webpack-dev-server": "^3.1.11",
     "worker-loader": "^1.1.1"
   },
   "repository": "git+https://github.com/m1010j/sat-zoo.git",
